@@ -35,7 +35,7 @@ Install:
 
 At the time of writing pySSLScan requires the development version of the cryptography packages. Use the source directly from the git repository. https://github.com/pyca/cryptography
 
-    pip install pysslscan
+    pip install sslscan
 
 
 Usage
