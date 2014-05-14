@@ -3,8 +3,9 @@ import importlib
 import os
 import re
 
-from urllib.parse import urlparse, parse_qs
+import six
 
+from six.moves.urllib.parse import urlparse, parse_qs
 
 from OpenSSL import SSL
 

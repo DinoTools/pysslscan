@@ -17,7 +17,8 @@ setup(
     ],
     install_requires=[
         "cryptography>0.4",
-        "pyopenssl>=0.14"
+        "pyopenssl>=0.14",
+        "six>=1.4.1"
     ],
     packages=find_packages(exclude=["*.tests", "*.tests.*"]),
     include_package_data=True,
