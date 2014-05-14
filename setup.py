@@ -21,9 +21,11 @@ setup(
         "Programming Language :: Python :: 3.4",
     ],
     install_requires=[
-        "cryptography>0.4",
-        "pyopenssl>=0.14",
-        "six>=1.4.1"
+        # We actually need > 0.4, but 0.5 isn't released yet, that's why the
+        # build the docs on Read the Docs will fail.
+        "cryptography >= 0.4",
+        "pyopenssl >= 0.14",
+        "six >= 1.4.1"
     ],
     packages=find_packages(exclude=["*.tests", "*.tests.*"]),
     include_package_data=True,
