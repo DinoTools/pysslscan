@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
-import sslscan
+from sslscan import ui
 
-sslscan.run()
+ui.run()
