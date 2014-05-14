@@ -6,6 +6,7 @@ Changelog
 
 .. note:: This version is not yet released and is under active development.
 
+* Added: API documentation and docstrings
 * Added: Support for Python 2.x
 
 0.1 - 2014-05-11
