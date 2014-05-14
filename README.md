@@ -7,6 +7,8 @@ It is designed to be flexible, lean and fast.
 
 It can be used as a library in other software projects and provides a command-line tool to get started.
 
+You can find more information in the [documentation](http://pysslscan.readthedocs.org/).
+
 **State:** Version 0.1 is a proof of concept to write a SSL scanner based on the cryptography package and it looks very promising.
 
 
@@ -26,10 +28,11 @@ Install
 
 Requirements:
 
-* Python 3.x
+* Python 2.7 or Python >= 3.2
 * Python packages:
   * cryptography > 0.4
   * pyOpenSSL >= 0.14
+  * six >= 1.4.1
 
 Install:
 
