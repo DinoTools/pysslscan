@@ -1,4 +1,12 @@
+"""
+A collection of classes to handle the configuration of a scanner or a module.
+"""
+
 class BaseConfig(object):
+    """
+    The base config. All other configuration classes use it as base class.
+    """
+
     def __init__(self, options=None):
         self._option_map = {}
         self._options = []
@@ -13,6 +21,13 @@ class BaseConfig(object):
                     self.add_option(name, **args)
 
     def add_option(self, name, **kwargs):
+        """
+        Add an option.
+
+        :param String name: Name of the config option
+        :param kwargs: Additional params are used for a new :class:`sslscan.config.Option` instance
+        """
+
         if name in self._option_map:
             return False
         option = Option(name, **kwargs)
@@ -22,6 +37,13 @@ class BaseConfig(object):
         self._options.append(option)
 
     def add_option_group(self, group):
+        """
+        Add grouped options.
+
+        :param group: Instance of :class:`sslscan.config.OptionGroup`
+        :type group: :class:`sslscan.config.OptionGroup`
+        """
+
         option_map = group.get_option_map()
         for name in option_map.keys():
             if name in self._option_map:
@@ -30,18 +52,44 @@ class BaseConfig(object):
         self._option_groups.append(group)
 
     def get_option(self, name):
+        """
+        Return an option.
+
+        :param String name: The name of the option
+        :return: The option or None if not found
+        """
+
         return self._option_map.get(name, None)
 
     def get_option_map(self):
+        """Return the option map"""
+
         return self._option_map
 
     def get_value(self, name, default=None):
+        """
+        Get the value of an option.
+
+        :param String name: Name of the option
+        :param Mixed default: Default value
+        :return: If found the value of the option or the default value
+        """
+
         option = self.get_option(name)
         if option is None:
             return None
         return option.get_value(default=default)
 
     def set_value(self, name, value):
+        """
+        Set the value of an option.
+
+        :param String name: Name of the option
+        :param Mixed value: The value of the option to set
+        :return: False or True
+        :rtype: Boolean
+        """
+
         print(name)
         option = self._option_map.get(name, None)
         if option is None:
@@ -62,6 +110,14 @@ class BaseConfig(object):
         return option.set_value(value)
 
     def set_values(self, data):
+        """
+        Set the value of multiple options at once.
+
+        :param date: The values to set
+
+        :todo: Improve docs
+        """
+
         if isinstance(data, str):
             # ToDo: support escape characters
             data_parts = data.split(":")
@@ -90,16 +146,24 @@ class BaseConfig(object):
 
 
 class ModuleConfig(BaseConfig):
+    """Holds the config of a module"""
+
     def __init__(self, **kwargs):
         BaseConfig.__init__(self, **kwargs)
 
 
 class ScanConfig(BaseConfig):
+    """Holds the config of a scanner instance"""
+
     def __init__(self, **kwargs):
         BaseConfig.__init__(self, **kwargs)
 
 
 class Option(object):
+    """
+
+    """
+
     def __init__(self, name, action="store", default=None, help="", metavar="", type="string", values=None, negation=None):
         self.name = name
         self.action = action
@@ -114,6 +178,14 @@ class Option(object):
         self.type = type
 
     def convert_value_type(self, value):
+        """
+        Tries to convert the value into the right type
+
+        :param Mixed value: Value to convert
+        :return: The value
+        :rtype: Mixed
+        """
+
         if self.type == "bool":
             if type(value) == int:
                 return bool(value)
@@ -131,6 +203,14 @@ class Option(object):
         return value
 
     def get_value(self, default=None):
+        """
+        Get the value.
+
+        :param Mixed default: Default value if value of option not set
+        :return: The value or the default value
+        :rtype: Mixed
+        """
+
         if self.value is not None:
             return self.value
         if default is not None:
@@ -138,6 +218,14 @@ class Option(object):
         return self.default
 
     def set_value(self, value):
+        """
+        Set the value and returns True if it was successful or False if not.
+
+        :param Mixed value: The value
+        :return: True or False
+        :rtype: Boolean
+        """
+
         value = self.convert_value_type(value)
 
         if self.type == "choice":
@@ -160,6 +248,7 @@ class Option(object):
 
 
 class OptionGroup(BaseConfig):
+    """Used to group multiple options"""
     def __init__(self, label, help=None):
         BaseConfig.__init__(self)
         self.label = label

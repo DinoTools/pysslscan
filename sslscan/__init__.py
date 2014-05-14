@@ -18,6 +18,10 @@ from sslscan.module.scan import BaseScan
 
 
 class Scanner(object):
+    """
+    The main scanner object.
+    """
+
     config_options = [
         (
             "ssl2", {
@@ -71,10 +75,26 @@ class Scanner(object):
         self._kb = KnowledgeBase()
 
     def append(self, module):
+        """
+        Append a scan or report module.
+
+        :param module: Instance of a scan or report module
+        """
+
         module.set_scanner(self)
         self._modules.append(module)
 
     def append_load(self, name, config, base_class=None):
+        """
+        Append a module but load it first by using the module manager.
+
+        :param String name: Name of the module to load
+        :param Mixed config: Config of the module
+        :param class base_class: Module lookup filter
+        :return: False if module not found
+
+        :todo: Return True if successful
+        """
         module = self._module_manager.get(name, base_class=base_class)
         if module is None:
             return False
@@ -83,6 +103,14 @@ class Scanner(object):
         self.append(module)
 
     def get_enabled_methods(self):
+        """
+        Uses the scanner config to create and return a list of all enabled
+        SSL methods.
+
+        :return: List of methods
+        :rtype: List
+        """
+
         methods = []
         if self.config.get_value('ssl2'):
             methods.append(SSL.SSLv2_METHOD)
@@ -98,9 +126,18 @@ class Scanner(object):
         return methods
 
     def get_knowledge_base(self):
+        """Return the knowledge base used by this scanner."""
+
         return self._kb
 
     def load_handler_from_uri(self, host_uri):
+        """
+        Load a handler from a given uri.
+
+        :param String host_uri: The URI
+        :return: The handler
+        """
+
         if not re.search('^([a-z]+:)?\/\/', host_uri):
             host_uri = '//' + host_uri
         uri = urlparse(host_uri)
@@ -120,12 +157,22 @@ class Scanner(object):
         return module
 
     def load_rating(self, name):
+        """
+        Use the active module manager to load a rating module
+
+        :param String name: Name of the rating module
+        """
+
         module = self._module_manager.get(name, base_class=BaseRating)
         if module is None:
             return NoneRating()
         return module()
 
     def run(self):
+        """
+        Perform the scan.
+        """
+
         result = []
         # Run scans
         for module in self._modules:
@@ -142,14 +189,33 @@ class Scanner(object):
             module.run()
 
     def set_handler(self, handler):
+        """
+        Set the active protocol handler.
+
+        :param handler: Instance of the handler
+        """
+
         self.handler = handler
 
 
 class ModuleManager(object):
+    """
+    Manager all modules
+    """
+
     def __init__(self):
         self._modules = []
 
     def get(self, name, base_class=None):
+        """
+        Return a module.
+
+        :param String name: Name of the module
+        :param class base_class: The filter
+        :return: If module exists return it or if not return None
+        :rtype: Mixed
+        """
+
         for module in self._modules:
             if base_class is not None and not issubclass(module, base_class):
                 continue
@@ -159,12 +225,21 @@ class ModuleManager(object):
         return None
 
     def register(self, module):
+        """
+        Register a new module.
+        """
+
         if module in self._modules:
             # ToDo: error handling
             return
         self._modules.append(module)
 
     def load_modules(self, pkg_names):
+        """
+        Load all modules provided by a given python package.
+
+        :param List pkg_names: List of String with package names
+        """
         for base_pkg_name in pkg_names:
             print(base_pkg_name)
             base_pkg = importlib.import_module(base_pkg_name)
@@ -195,6 +270,10 @@ class ModuleManager(object):
                     print(str(msg))
 
     def load_global_modules(self):
+        """
+        Load all global modules.
+        """
+
         pkg_names = [
             "sslscan.module.handler",
             "sslscan.module.rating",
