@@ -10,6 +10,7 @@ from OpenSSL import SSL
 
 
 from sslscan.config import ScanConfig
+from sslscan.exception import ModuleNotFound
 from sslscan.kb import KnowledgeBase
 from sslscan.module.handler import BaseHandler
 from sslscan.module.rating import BaseRating, NoneRating
@@ -92,12 +93,12 @@ class Scanner(object):
         :param Mixed config: Config of the module
         :param class base_class: Module lookup filter
         :return: False if module not found
-
-        :todo: Return True if successful
         """
+
         module = self._module_manager.get(name, base_class=base_class)
         if module is None:
-            return False
+            raise ModuleNotFound(name=name,base_class=base_class)
+
         module = module()
         module.config.set_values(config)
         self.append(module)

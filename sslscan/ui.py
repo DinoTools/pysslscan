@@ -1,7 +1,9 @@
 import argparse
+import sys
 
 
 from sslscan import modules, Scanner
+from sslscan.exception import ModuleNotFound
 from sslscan.module.report import BaseReport
 from sslscan.module.scan import BaseScan
 
@@ -39,11 +41,19 @@ def run():
 
     for module in args.scan:
         name, sep, options = module.partition(":")
-        scanner.append_load(name, options, base_class=BaseScan)
+        try:
+            scanner.append_load(name, options, base_class=BaseScan)
+        except ModuleNotFound as e:
+            print("Scan module '{0}' not found".format(e.name))
+            sys.exit(1)
 
     for module in args.report:
         name, sep, options = module.partition(":")
-        scanner.append_load(name, options, base_class=BaseReport)
+        try:
+            scanner.append_load(name, options, base_class=BaseReport)
+        except ModuleNotFound as e:
+            print("Report module '{0}' not found".format(e.name))
+            sys.exit(1)
 
     for host_uri in args.host_uris:
         module = scanner.load_handler_from_uri(host_uri)
