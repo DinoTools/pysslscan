@@ -1,4 +1,5 @@
 import argparse
+import logging
 import sys
 
 
@@ -7,10 +8,18 @@ from sslscan.exception import ModuleNotFound
 from sslscan.module.report import BaseReport
 from sslscan.module.scan import BaseScan
 
+
+logger = logging.getLogger("ui")
+
+
 def run():
     global modules
+    logging.basicConfig(
+        format="%(asctime)-15s %(levelname)-8s %(name)s %(message)s",
+        level=logging.ERROR,
+    )
     parser = argparse.ArgumentParser(description="SSLScan")
-    parser.add_argument("--verbose", "-v", action="count")
+    parser.add_argument("--verbose", "-v", action="count", default=0)
     parser.add_argument(
         "--version",
         action="version",
@@ -34,6 +43,12 @@ def run():
         )
 
     args = parser.parse_args()
+    log_level = 40 - 10 * args.verbose
+    if log_level < 10:
+        log_level = 10
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+
     modules.load_global_modules()
     scanner = Scanner()
     print(args)
