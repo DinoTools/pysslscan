@@ -1,6 +1,9 @@
 import importlib
+import logging
 import os
 import re
+
+from pprint import pformat
 
 import six
 
@@ -20,6 +23,9 @@ from sslscan.module.handler import BaseHandler
 from sslscan.module.rating import BaseRating, NoneRating
 from sslscan.module.report import BaseReport
 from sslscan.module.scan import BaseScan
+
+
+logger = logging.getLogger(__name__)
 
 
 class Scanner(object):
@@ -121,7 +127,6 @@ class Scanner(object):
             methods.append(SSL.SSLv2_METHOD)
         if self.config.get_value('ssl3'):
             methods.append(SSL.SSLv3_METHOD)
-        print(self.config.get_value('tls10'))
         if self.config.get_value('tls10'):
             methods.append(SSL.TLSv1_METHOD)
         if self.config.get_value('tls11'):
@@ -143,6 +148,7 @@ class Scanner(object):
         :return: The handler
         """
 
+        logger.debug("Loading handler from URI: %s", host_uri)
         if not re.search('^([a-z]+:)?\/\/', host_uri):
             host_uri = '//' + host_uri
         uri = urlparse(host_uri)
@@ -157,7 +163,8 @@ class Scanner(object):
         config = {}
         for k, v in tmp.items():
             config[k] = v[0]
-        print(config)
+
+        logger.debug("Extracted config values: %s", pformat(config))
         module.config.set_values(config)
         return module
 
@@ -178,19 +185,20 @@ class Scanner(object):
         Perform the scan.
         """
 
-        result = []
         # Run scans
         for module in self._modules:
             if not isinstance(module, BaseScan):
                 continue
-            print(module)
-            result.append(module.run())
+
+            logger.info("Running scan module '%s' ...", str(module))
+            module.run()
 
         # Generate reports
         for module in self._modules:
             if not isinstance(module, BaseReport):
                 continue
-            print(module)
+
+            logger.info("Running report module '%s' ...", str(module))
             module.run()
 
     def set_handler(self, handler):
@@ -245,13 +253,18 @@ class ModuleManager(object):
 
         :param List pkg_names: List of String with package names
         """
+
+        logger.info("Loading modules ...")
+
         for base_pkg_name in pkg_names:
-            print(base_pkg_name)
+            logger.debug("Base package name: %s", base_pkg_name)
             base_pkg = importlib.import_module(base_pkg_name)
-            print(base_pkg)
+
+            logger.debug("Base package: %s", base_pkg)
 
             path = base_pkg.__path__[0]
-            print(path)
+            logger.debug("Base path: %s", path)
+
             for filename in os.listdir(path):
                 if filename == "__init__.py":
                     continue
@@ -270,9 +283,10 @@ class ModuleManager(object):
                 mod_name = "{}.{}".format(base_pkg_name, pkg_name)
                 try:
                     importlib.import_module(mod_name)
-                    print("Loaded '{}' successfully".format(mod_name))
+                    logger.info("Loaded '%s' successfully", mod_name)
                 except Exception as msg:
-                    print(str(msg))
+                    logger.warning("Unable to load: '%s'", mod_name)
+                    logger.debug("An error occurred while importing '%s'", mod_name, exc_info=True)
 
     def load_global_modules(self):
         """

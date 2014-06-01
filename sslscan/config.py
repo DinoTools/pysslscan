@@ -2,6 +2,12 @@
 A collection of classes to handle the configuration of a scanner or a module.
 """
 
+import logging
+
+
+logger = logging.getLogger(__name__)
+
+
 class BaseConfig(object):
     """
     The base config. All other configuration classes use it as base class.
@@ -90,7 +96,7 @@ class BaseConfig(object):
         :rtype: Boolean
         """
 
-        print(name)
+        logger.debug("Set value '%s' to '%r'", name, value)
         option = self._option_map.get(name, None)
         if option is None:
             return False

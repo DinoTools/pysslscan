@@ -9,7 +9,7 @@ from sslscan.module.report import BaseReport
 from sslscan.module.scan import BaseScan
 
 
-logger = logging.getLogger("ui")
+logger = logging.getLogger(__name__)
 
 
 def run():
@@ -51,12 +51,10 @@ def run():
 
     modules.load_global_modules()
     scanner = Scanner()
-    print(args)
     args_dict = vars(args)
-    print(args)
     for name, opt_args in Scanner.config_options:
         if name in args_dict:
-            print("set %s %s" % (name, str(args_dict.get(name))))
+            logger.debug("Set %s = %s", name, str(args_dict.get(name)))
             scanner.config.set_value(name, args_dict.get(name))
 
     for module in args.scan:
@@ -64,7 +62,7 @@ def run():
         try:
             scanner.append_load(name, options, base_class=BaseScan)
         except ModuleNotFound as e:
-            print("Scan module '{0}' not found".format(e.name))
+            logger.error("Scan module '%s' not found", e.name)
             sys.exit(1)
 
     for module in args.report:
@@ -72,7 +70,7 @@ def run():
         try:
             scanner.append_load(name, options, base_class=BaseReport)
         except ModuleNotFound as e:
-            print("Report module '{0}' not found".format(e.name))
+            logger.error("Report module '%s' not found", e.name)
             sys.exit(1)
 
     for host_uri in args.host_uris:
