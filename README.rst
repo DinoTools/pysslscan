@@ -7,7 +7,7 @@ It is designed to be flexible, lean and fast.
 
 It can be used as a library in other software projects and provides a command-line tool to get started.
 
-You can find more information in the [documentation](http://pysslscan.readthedocs.org/).
+You can find more information in the `documentation`_.
 
 **State:** Version 0.1 is a proof of concept to write a SSL scanner based on the cryptography package and it looks very promising.
 
@@ -30,6 +30,7 @@ Requirements:
 
 * Python 2.7 or Python >= 3.2
 * Python packages:
+
   * cryptography > 0.4
   * pyOpenSSL >= 0.14
   * six >= 1.4.1
@@ -38,7 +39,9 @@ Install:
 
 At the time of writing pySSLScan requires the development version of the cryptography packages. Use the source directly from the git repository. https://github.com/pyca/cryptography
 
-    pip install sslscan
+.. code-block:: console
+
+    $ pip install sslscan
 
 
 Usage
@@ -46,15 +49,24 @@ Usage
 
 To scan a HTTPS service:
 
-    pysslscan --scan=protocol.http --scan=vuln.heartbleed --scan=server.renegotiation --scan=server.preferred_ciphers --scan=server.ciphers --report=term:rating=ssllabs.2009e --ssl2 --ssl3 --tls10 --tls11 --tls12 http://example.org
+
+.. code-block:: console
+
+    $ pysslscan --scan=protocol.http --scan=vuln.heartbleed --scan=server.renegotiation \
+      --scan=server.preferred_ciphers --scan=server.ciphers \
+      --report=term:rating=ssllabs.2009e --ssl2 --ssl3 --tls10 --tls11 --tls12 http://example.org
 
 
 To display more information:
 
-    pysslscan --help
+.. code-block:: console
+
+    $ pysslscan --help
 
 
 License
 -------
 
 Published under the LGPLv3+ (see LICENSE for more information)
+
+.. _`documentation`: http://pysslscan.readthedocs.org/
