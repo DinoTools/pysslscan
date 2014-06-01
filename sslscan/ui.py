@@ -2,7 +2,7 @@ import argparse
 import sys
 
 
-from sslscan import modules, Scanner
+from sslscan import __version__, modules, Scanner
 from sslscan.exception import ModuleNotFound
 from sslscan.module.report import BaseReport
 from sslscan.module.scan import BaseScan
@@ -11,6 +11,11 @@ def run():
     global modules
     parser = argparse.ArgumentParser(description="SSLScan")
     parser.add_argument("--verbose", "-v", action="count")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s " + __version__
+    )
     parser.add_argument("--report", action="append", default=[])
     parser.add_argument("--scan", action="append", default=[])
     parser.add_argument("host_uris",
