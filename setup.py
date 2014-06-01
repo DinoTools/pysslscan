@@ -1,13 +1,27 @@
 #!/usr/bin/env python
+import os
 from setuptools import setup, find_packages
 
+base_dir = os.path.dirname(__file__)
+
+about = {}
+with open(os.path.join(base_dir, "sslscan", "__about__.py")) as f:
+    exec(f.read(), about)
+
+with open(os.path.join(base_dir, "README.rst")) as f:
+    long_description = f.read()
+
 setup(
-    name="sslscan",
-    version="0.1",
-    license="LGPLv3+",
-    description="Framework and command-line tool to scan SSL enabled services",
+    name=about["__title__"],
+    version=about["__version__"],
+
+    description=about["__summary__"],
+    long_description=long_description,
+    license=about["__license__"],
+    url=about["__uri__"],
+
     zip_safe=False,
-    author="PhiBo (DinoTools)",
+    author=about["__author__"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
