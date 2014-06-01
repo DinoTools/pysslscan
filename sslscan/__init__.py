@@ -9,6 +9,10 @@ from six.moves.urllib.parse import urlparse, parse_qs
 from OpenSSL import SSL
 
 
+from sslscan.__about__ import (
+    __author__, __copyright__, __email__, __license__, __summary__, __title__,
+    __uri__, __version__
+)
 from sslscan.config import ScanConfig
 from sslscan.exception import ModuleNotFound
 from sslscan.kb import KnowledgeBase
