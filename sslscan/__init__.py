@@ -140,6 +140,11 @@ class Scanner(object):
 
         return self._kb
 
+    def get_module_manager(self):
+        """Return the active module manager for this scanner."""
+
+        return self._module_manager
+
     def load_handler_from_uri(self, host_uri):
         """
         Load a handler from a given uri.
@@ -236,6 +241,21 @@ class ModuleManager(object):
                 return module
 
         return None
+
+    def get_modules(self, base_class=None):
+        """
+        Return a list of available modules. Use the base_class as filter option
+
+        :param class base_class: The filter
+        :rtype: List
+        """
+
+        result = []
+        for module in self._modules:
+            if base_class is None or issubclass(module, base_class):
+                result.append(module)
+
+        return result
 
     def register(self, module):
         """
