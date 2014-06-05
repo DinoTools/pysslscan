@@ -22,7 +22,17 @@ def print_module_list(args):
     mod_mgr = scanner.get_module_manager()
     modules = mod_mgr.get_modules(base_class=args.base_class)
     for module in modules:
-        print("{0} - ".format(module.name))
+        name = module.name
+        text = module.__doc__
+        if text is None:
+            text = ""
+        text = text.splitlines()
+        if len(text) == 0:
+            text = ""
+        else:
+            text = text[0]
+
+        print("{0} - {1}".format(name, text))
 
     return 0
 
