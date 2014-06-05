@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+import textwrap
 
 
 from sslscan import __version__, modules, Scanner
@@ -15,6 +16,36 @@ def load_modules():
     global modules
     modules.load_global_modules()
 
+def print_module_info(args):
+    load_modules()
+    scanner = Scanner()
+
+    mod_mgr = scanner.get_module_manager()
+    modules = mod_mgr.get_modules(base_class=args.base_class)
+    heading = "Module: {}".format(args.module_name)
+    print()
+    print("="*len(heading))
+    print(heading)
+    print("="*len(heading))
+    print()
+    for module in modules:
+        if module.name != args.module_name:
+            continue
+
+        text = module.__doc__
+        if text is None:
+            text = ""
+
+        text = textwrap.dedent(text)
+        formatter = argparse.RawTextHelpFormatter("", width=80)
+        formatter.add_text(text)
+
+        print(formatter.format_help())
+
+        return 0
+
+    return 1
+
 def print_module_list(args):
     load_modules()
     scanner = Scanner()
@@ -26,12 +57,19 @@ def print_module_list(args):
         text = module.__doc__
         if text is None:
             text = ""
+
         text = text.splitlines()
+        while len(text) > 0:
+            if len(text[0].strip()) > 0:
+                break
+            text.pop(0)
+
         if len(text) == 0:
             text = ""
         else:
             text = text[0]
 
+        text = textwrap.dedent(text)
         print("{0} - {1}".format(name, text))
 
     return 0
@@ -99,6 +137,24 @@ def run():
         title="Commands",
     )
 
+    # CMD: report.info
+    parser_report_info = subparsers.add_parser(
+        "report.info",
+        help="Display more information",
+    )
+    parser_report_info.set_defaults(
+        base_class=BaseReport,
+        func=print_module_info,
+    )
+
+    parser_report_info.add_argument(
+        "module_name",
+        action="store",
+        default=None,
+        metavar="MODULE",
+        help="Name of the module",
+    )
+
     # CMD: report.list
     parser_report_list = subparsers.add_parser(
         "report.list",
@@ -143,6 +199,24 @@ def run():
             default=opt_args.get("default"),
             dest=name
         )
+
+    # CMD: scan.info
+    parser_scan_info = subparsers.add_parser(
+        "scan.info",
+        help="Display more information",
+    )
+    parser_scan_info.set_defaults(
+        base_class=BaseScan,
+        func=print_module_info,
+    )
+
+    parser_scan_info.add_argument(
+        "module_name",
+        action="store",
+        default=None,
+        metavar="MODULE",
+        help="Name of the module",
+    )
 
     # CMD: scan.list
     parser_scan_list = subparsers.add_parser(
