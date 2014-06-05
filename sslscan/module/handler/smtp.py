@@ -8,6 +8,9 @@ from sslscan.module.handler.tcp import TCP
 
 
 class SMTP(TCP):
+    """
+    Handle SMTP-connections.
+    """
     name="smtp"
 
     config_options = TCP.config_options + [

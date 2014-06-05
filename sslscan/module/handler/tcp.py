@@ -7,6 +7,10 @@ from sslscan.module.handler import BaseHandler
 
 
 class TCP(BaseHandler):
+    """
+    Handle raw TCP-connections.
+    """
+
     name="tcp"
 
     def __init__(self, **kwargs):

@@ -8,6 +8,12 @@ from sslscan.module.scan import BaseScan
 
 
 class ProtocolHTTP(BaseScan):
+    """
+    Extract additional information.
+
+    Perform a HTTP-request and extract additional information.
+    """
+
     name="protocol.http"
 
     def __init__(self, **kwargs):

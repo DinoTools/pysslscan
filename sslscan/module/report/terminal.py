@@ -4,6 +4,10 @@ from sslscan import modules, _helper as helper
 from sslscan.module.report import BaseReport
 
 class Terminal(BaseReport):
+    """
+    Print results to the terminal.
+    """
+
     name="term"
 
     def __init__(self, **kwargs):

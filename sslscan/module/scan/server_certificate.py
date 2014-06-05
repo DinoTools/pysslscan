@@ -7,6 +7,10 @@ from sslscan.module.scan import BaseScan
 
 
 class ServerCertificate(BaseScan):
+    """
+    Extract certificate information.
+    """
+
     name="server.certificate"
 
     def __init__(self, **kwargs):

@@ -7,6 +7,14 @@ from sslscan.module.rating import BaseRating
 
 
 class RBSec(BaseRating):
+    """
+    Rating by rbsec.
+
+    Rating used in the sslscan tool by rbsec.
+
+    More infos: https://github.com/rbsec/sslscan
+    """
+
     name="rbsec"
 
     _rules = {

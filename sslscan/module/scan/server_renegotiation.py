@@ -7,6 +7,10 @@ from sslscan.module.scan import BaseScan
 
 
 class ServerRenegotiation(BaseScan):
+    """
+    Test if renegotiation is supported by the server.
+    """
+
     name="server.renegotiation"
 
     def __init__(self, **kwargs):

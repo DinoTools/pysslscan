@@ -7,6 +7,12 @@ from sslscan.module.rating import BaseRating
 
 
 class SSLLabs2009c(BaseRating):
+    """
+    Rating used by SSL Labs 2009c
+
+    https://www.ssllabs.com/
+    """
+
     name="ssllabs.2009c"
 
     _rules = {
@@ -28,6 +34,12 @@ class SSLLabs2009c(BaseRating):
 
 
 class SSLLabs2009d(BaseRating):
+    """
+    Rating used by SSL Labs 2009d
+
+    https://www.ssllabs.com/
+    """
+
     name="ssllabs.2009d"
 
     _rules = {
@@ -49,6 +61,12 @@ class SSLLabs2009d(BaseRating):
 
 
 class SSLLabs2009e(BaseRating):
+    """
+    Rating used by SSL Labs 2009e
+
+    https://www.ssllabs.com/
+    """
+
     name="ssllabs.2009e"
 
     _rules = {

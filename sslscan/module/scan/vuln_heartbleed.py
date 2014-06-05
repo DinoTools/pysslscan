@@ -40,6 +40,13 @@ hb = h2bin("""
 """)
 
 class VulnerabilityHeartbleed(BaseScan):
+    """
+    Test if server is vulnerable.
+
+    Test if the heartbleed bug can be used to extract additional server
+    information.
+    """
+
     name="vuln.heartbleed"
 
     def __init__(self, **kwargs):

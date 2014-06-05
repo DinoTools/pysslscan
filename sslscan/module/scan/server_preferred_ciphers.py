@@ -8,6 +8,10 @@ from sslscan.module.scan import BaseScan
 
 
 class ServerPreferredCiphers(BaseScan):
+    """
+    Detect preferred server ciphers.
+    """
+
     name="server.preferred_ciphers"
 
     def __init__(self, **kwargs):

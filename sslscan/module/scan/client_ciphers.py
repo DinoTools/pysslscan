@@ -6,7 +6,13 @@ from sslscan.module.scan import BaseScan
 
 
 class ClientCiphers(BaseScan):
-    name="client.ciphers"
+    """
+    List all client ciphers.
+
+    This module lists all ciphers available on the client.
+    """
+
+    name = "client.ciphers"
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
