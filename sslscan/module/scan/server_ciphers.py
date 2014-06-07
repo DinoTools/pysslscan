@@ -8,6 +8,10 @@ from sslscan.module.scan import BaseScan
 
 
 class ServerCiphers(BaseScan):
+    """
+    Test a server for provided ciphers.
+    """
+
     name="server.ciphers"
 
     def __init__(self, **kwargs):
