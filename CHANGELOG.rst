@@ -6,8 +6,10 @@ Changelog
 
 .. note:: This version is not yet released and is under active development.
 
-* Added: API documentation and docstrings
-* Added: Support for Python 2.x
+* Add: API documentation and docstrings
+* Add: Support for Python 2.x
+* Add: Logging
+* Change: Improve command-line UI
 
 0.1 - 2014-05-11
 ~~~~~~~~~~~~~~~~
