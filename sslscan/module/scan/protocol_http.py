@@ -1,6 +1,4 @@
-from socket import socket
-
-from OpenSSL import SSL, _util
+from OpenSSL import SSL
 
 from sslscan import modules
 from sslscan.kb import ResultGroup, ResultValue
@@ -14,7 +12,7 @@ class ProtocolHTTP(BaseScan):
     Perform a HTTP-request and extract additional information.
     """
 
-    name="protocol.http"
+    name = "protocol.http"
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
@@ -34,7 +32,9 @@ class ProtocolHTTP(BaseScan):
             ctx.set_cipher_list("ALL:COMPLEMENT")
             conn = self.scanner.handler.connect()
             conn_ssl = SSL.Connection(ctx, conn)
-            conn_ssl.set_tlsext_host_name(self.scanner.handler.hostname.encode("utf-8"))
+            conn_ssl.set_tlsext_host_name(
+                self.scanner.handler.hostname.encode("utf-8")
+            )
             conn_ssl.set_connect_state()
             try:
                 conn_ssl.do_handshake()
@@ -94,7 +94,7 @@ class ProtocolHTTP(BaseScan):
                     )
 
             res_hsts = ResultValue(
-                    label="Strict-Transport-Security"
+                label="Strict-Transport-Security"
             )
 
             if hsts is not None:

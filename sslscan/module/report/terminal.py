@@ -3,12 +3,13 @@ import datetime
 from sslscan import modules, _helper as helper
 from sslscan.module.report import BaseReport
 
+
 class Terminal(BaseReport):
     """
     Print results to the terminal.
     """
 
-    name="term"
+    name = "term"
 
     def __init__(self, **kwargs):
         BaseReport.__init__(self, **kwargs)
@@ -122,7 +123,7 @@ class Terminal(BaseReport):
                     tmp_name,
                     tmp_value
                 ))
-        pk = x509.get_pubkey()
+#        pk = x509.get_pubkey()
 #        if pk:
 #            print("    Public Key Algorithm: %s" % pk.get_algorithm())
 #            tmp_name = pk.get_type_name()

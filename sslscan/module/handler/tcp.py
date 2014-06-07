@@ -1,7 +1,5 @@
 from socket import socket
 
-from OpenSSL import SSL, _util
-
 from sslscan import modules
 from sslscan.module.handler import BaseHandler
 
@@ -11,7 +9,7 @@ class TCP(BaseHandler):
     Handle raw TCP-connections.
     """
 
-    name="tcp"
+    name = "tcp"
 
     def __init__(self, **kwargs):
         self.port = 443

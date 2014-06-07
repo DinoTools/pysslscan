@@ -1,5 +1,3 @@
-from socket import socket
-
 from OpenSSL import SSL, _util
 
 from sslscan import modules
@@ -11,7 +9,7 @@ class ServerRenegotiation(BaseScan):
     Test if renegotiation is supported by the server.
     """
 
-    name="server.renegotiation"
+    name = "server.renegotiation"
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
@@ -32,7 +30,9 @@ class ServerRenegotiation(BaseScan):
             ctx.set_options(_util.lib.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION)
             conn = self.scanner.handler.connect()
             conn_ssl = SSL.Connection(ctx, conn)
-            conn_ssl.set_tlsext_host_name(self.scanner.handler.hostname.encode("utf-8"))
+            conn_ssl.set_tlsext_host_name(
+                self.scanner.handler.hostname.encode("utf-8")
+            )
             conn_ssl.set_connect_state()
             try:
                 conn_ssl.do_handshake()
@@ -54,5 +54,6 @@ class ServerRenegotiation(BaseScan):
                         kb.set("server.renegotiation.support", True)
 
             conn_ssl.close()
+
 
 modules.register(ServerRenegotiation)

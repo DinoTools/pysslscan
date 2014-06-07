@@ -1,5 +1,3 @@
-from socket import socket
-
 from OpenSSL import SSL, _util
 
 from sslscan import modules
@@ -11,7 +9,7 @@ class ServerCertificate(BaseScan):
     Extract certificate information.
     """
 
-    name="server.certificate"
+    name = "server.certificate"
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
@@ -29,7 +27,9 @@ class ServerCertificate(BaseScan):
             ctx.set_cipher_list("ALL:COMPLEMENT")
             conn = self.scanner.handler.connect()
             conn_ssl = SSL.Connection(ctx, conn)
-            conn_ssl.set_tlsext_host_name(self.scanner.handler.hostname.encode("utf-8"))
+            conn_ssl.set_tlsext_host_name(
+                self.scanner.handler.hostname.encode("utf-8")
+            )
             conn_ssl.set_connect_state()
             try:
                 conn_ssl.do_handshake()

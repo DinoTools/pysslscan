@@ -1,10 +1,9 @@
 import re
 from socket import socket
 
-from OpenSSL import SSL, _util
-
 from sslscan import modules
 from sslscan.module.handler.tcp import TCP
+
 
 class HTTP(TCP):
     """
@@ -13,7 +12,7 @@ class HTTP(TCP):
     Handle HTTP-connections and extract additional information.
     """
 
-    name="http"
+    name = "http"
 
     _regex_status = re.compile("^(?P<version>HTTP\/1\.[01])\s+(?P<code>[0-9]+)\s+(?P<message>.*?)$")
 

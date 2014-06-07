@@ -7,11 +7,10 @@ import struct
 import select
 import time
 
-from socket import socket
-
 from sslscan import modules
 from sslscan.kb import ResultGroup, ResultValue
 from sslscan.module.scan import BaseScan
+
 
 def h2bin(x):
     return binascii.unhexlify(x.replace(" ", "").replace("\n", "").encode("ASCII"))
@@ -39,6 +38,7 @@ hb = h2bin("""
 01 40 00
 """)
 
+
 class VulnerabilityHeartbleed(BaseScan):
     """
     Test if server is vulnerable.
@@ -47,7 +47,7 @@ class VulnerabilityHeartbleed(BaseScan):
     information.
     """
 
-    name="vuln.heartbleed"
+    name = "vuln.heartbleed"
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
@@ -98,7 +98,7 @@ class VulnerabilityHeartbleed(BaseScan):
         conn.send(hello)
         while True:
             typ, ver, payload = self._recv_msg(conn)
-            if typ == None:
+            if typ is None:
                 kb_vuln.value = False
                 kb.set(
                     "vulnerability.custom.heartbleed.vulnerable",

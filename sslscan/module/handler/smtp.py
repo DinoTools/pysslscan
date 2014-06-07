@@ -1,8 +1,6 @@
 from smtplib import SMTP as PySMTP
 from socket import socket
 
-from OpenSSL import SSL, _util
-
 from sslscan import modules
 from sslscan.module.handler.tcp import TCP
 
@@ -11,7 +9,8 @@ class SMTP(TCP):
     """
     Handle SMTP-connections.
     """
-    name="smtp"
+
+    name = "smtp"
 
     config_options = TCP.config_options + [
         (
@@ -22,6 +21,7 @@ class SMTP(TCP):
             }
         )
     ]
+
     def __init__(self, **kwargs):
         self.port = 25
         TCP.__init__(self, **kwargs)

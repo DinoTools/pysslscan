@@ -1,5 +1,3 @@
-from socket import socket
-
 from OpenSSL import SSL, _util
 
 from sslscan import modules
@@ -12,7 +10,7 @@ class ServerCiphers(BaseScan):
     Test a server for provided ciphers.
     """
 
-    name="server.ciphers"
+    name = "server.ciphers"
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
@@ -32,7 +30,10 @@ class ServerCiphers(BaseScan):
                 cipher = _util.lib.sk_SSL_CIPHER_value(cipher_ptr, i)
                 ciphers.append(
                     Cipher(
-                        bits=_util.lib.SSL_CIPHER_get_bits(cipher, _util.ffi.NULL),
+                        bits=_util.lib.SSL_CIPHER_get_bits(
+                            cipher,
+                            _util.ffi.NULL
+                        ),
                         method=method,
                         name=_util.ffi.string(_util.lib.SSL_CIPHER_get_name(cipher))
                     )

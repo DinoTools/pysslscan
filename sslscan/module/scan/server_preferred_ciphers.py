@@ -1,5 +1,3 @@
-from socket import socket
-
 from OpenSSL import SSL, _util
 
 from sslscan import modules
@@ -50,7 +48,6 @@ class ServerPreferredCiphers(BaseScan):
                 cipher.status = 1
 
             kb.append("server.preferred_ciphers", cipher)
-
 
             conn_ssl.close()
 
