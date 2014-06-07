@@ -6,7 +6,9 @@ import textwrap
 
 from sslscan import __version__, modules, Scanner
 from sslscan.exception import ModuleNotFound
+from sslscan.module.handler import BaseHandler
 from sslscan.module.report import BaseReport
+from sslscan.module.rating import BaseRating
 from sslscan.module.scan import BaseScan
 
 
@@ -135,6 +137,62 @@ def run():
         description="The command to run",
         metavar="command",
         title="Commands",
+    )
+
+    # CMD: handler.info
+    parser_handler_info = subparsers.add_parser(
+        "handler.info",
+        help="Display more information for a specified protocol handler module",
+    )
+    parser_handler_info.set_defaults(
+        base_class=BaseHandler,
+        func=print_module_info,
+    )
+
+    parser_handler_info.add_argument(
+        "module_name",
+        action="store",
+        default=None,
+        metavar="MODULE",
+        help="Name of the module",
+    )
+
+    # CMD: handler.list
+    parser_handler_list = subparsers.add_parser(
+        "handler.list",
+        help="Display a list of all available protocol handler modules",
+    )
+    parser_handler_list.set_defaults(
+        base_class=BaseHandler,
+        func=print_module_list,
+    )
+
+    # CMD: rating.info
+    parser_rating_info = subparsers.add_parser(
+        "rating.info",
+        help="Display more information for a specified rating module",
+    )
+    parser_rating_info.set_defaults(
+        base_class=BaseRating,
+        func=print_module_info,
+    )
+
+    parser_rating_info.add_argument(
+        "module_name",
+        action="store",
+        default=None,
+        metavar="MODULE",
+        help="Name of the module",
+    )
+
+    # CMD: rating.list
+    parser_rating_list = subparsers.add_parser(
+        "rating.list",
+        help="Display a list of all available rating modules",
+    )
+    parser_rating_list.set_defaults(
+        base_class=BaseRating,
+        func=print_module_list,
     )
 
     # CMD: report.info
