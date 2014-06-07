@@ -116,7 +116,37 @@ def run():
     )
 
     parser = argparse.ArgumentParser(
-        description="Command-line interface to access the pySSLScan framework",
+        description=textwrap.dedent(
+            """
+            Command-line interface to access the pySSLScan framework.
+            """
+        ),
+        epilog=textwrap.dedent(
+            """
+            Examples:
+
+                Display this help:
+
+                    %(prog)s -h
+
+                Use the scan.list command to list all available scan modules:
+
+                    %(prog)s scan.list
+
+                Display additional information for the scan.list command:
+
+                    %(prog)s scan.list -h
+
+                Perform a scan:
+
+                    %(prog)s scan --scan=server.ciphers --report=term --tls10 127.0.0.1
+
+                To get more scan examples run:
+
+                    %(prog)s scan -h
+            """
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     parser.add_argument(
@@ -227,7 +257,41 @@ def run():
     # CMD: scan
     parser_scan = subparsers.add_parser(
         "scan",
-        help="Scan the given hosts and services"
+        help="Scan the given hosts and services",
+        epilog=textwrap.dedent(
+            """
+            Examples:
+
+                Perform a scan:
+
+                 * activate scan module to detect server ciphers
+                 * activate report module to print results to STDOUT
+                 * use TLSv1.0 method
+                 * use TCP protocol handler
+
+                    %(prog)s scan --scan=server.ciphers --report=term --tls10 127.0.0.1
+                    %(prog)s scan --scan=server.ciphers --report=term --tls10 tcp://127.0.0.1
+
+                Perform a scan:
+
+                  * activate scan module to detect server ciphers
+                  * activate report module to print results to STDOUT
+                  * use TLSv1.0 method
+                  * use HTTP protocol handler
+
+                    %(prog)s scan --scan=server.ciphers --report=term --tls10 http://127.0.0.1
+
+                Perform a scan:
+
+                  * activate scan module to detect server ciphers
+                  * activate report module to print results to STDOUT
+                  * use TLSv1.0 method
+                  * use SMTP protocol handler
+
+                    %(prog)s scan --scan=server.ciphers --report=term --tls10 'smtp://127.0.0.1?starttls=true'
+            """
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser_scan.set_defaults(func=run_scan)
     parser_scan.add_argument(
