@@ -52,7 +52,7 @@ To scan a HTTPS service:
 
 .. code-block:: console
 
-    $ pysslscan --scan=protocol.http --scan=vuln.heartbleed --scan=server.renegotiation \
+    $ pysslscan scan --scan=protocol.http --scan=vuln.heartbleed --scan=server.renegotiation \
       --scan=server.preferred_ciphers --scan=server.ciphers \
       --report=term:rating=ssllabs.2009e --ssl2 --ssl3 --tls10 --tls11 --tls12 http://example.org
 
