@@ -186,24 +186,28 @@ class Scanner(object):
         return module()
 
     def run(self):
-        """
-        Perform the scan.
-        """
+        """Execute all scan and report modules attached to the scanner."""
+        self.run_scans()
+        self.run_reports()
 
-        # Run scans
-        for module in self._modules:
-            if not isinstance(module, BaseScan):
-                continue
+    def run_reports(self):
+        """Execute all report modules attached to the scanner."""
 
-            logger.info("Running scan module '%s' ...", str(module))
-            module.run()
-
-        # Generate reports
         for module in self._modules:
             if not isinstance(module, BaseReport):
                 continue
 
             logger.info("Running report module '%s' ...", str(module))
+            module.run()
+
+    def run_scans(self):
+        """Execute all scan modules attached to the scanner."""
+
+        for module in self._modules:
+            if not isinstance(module, BaseScan):
+                continue
+
+            logger.info("Running scan module '%s' ...", str(module))
             module.run()
 
     def set_handler(self, handler):
