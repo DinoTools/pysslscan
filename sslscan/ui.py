@@ -86,6 +86,14 @@ def run_scan(args):
             logger.debug("Set %s = %s", name, str(args_dict.get(name)))
             scanner.config.set_value(name, args_dict.get(name))
 
+    if len(args.scan) == 0:
+        logger.error("No scan module specified")
+        return 1
+
+    if len(args.report) == 0:
+        logger.error("No report module specified")
+        return 1
+
     for module in args.scan:
         name, sep, options = module.partition(":")
         try:
