@@ -17,7 +17,7 @@ class ServerCiphers(BaseScan):
 
     def run(self):
         ciphers = []
-        for method in self.scanner.get_enabled_methods():
+        for method in self._scanner.get_enabled_methods():
             try:
                 ctx = SSL.Context(method)
             except:
@@ -39,10 +39,10 @@ class ServerCiphers(BaseScan):
                     )
                 )
 
-        kb = self.scanner.get_knowledge_base()
+        kb = self._scanner.get_knowledge_base()
 
         for cipher in ciphers:
-            conn = self.scanner.handler.connect()
+            conn = self._scanner.handler.connect()
             # ToDo: error handling
             ctx = SSL.Context(cipher.method)
             ctx.set_cipher_list(cipher.name)

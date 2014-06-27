@@ -81,7 +81,7 @@ class VulnerabilityHeartbleed(BaseScan):
         return(typ, ver, pay)
 
     def run(self):
-        kb = self.scanner.get_knowledge_base()
+        kb = self._scanner.get_knowledge_base()
 
         kb.set(
             "vulnerability.custom.heartbleed",
@@ -94,7 +94,7 @@ class VulnerabilityHeartbleed(BaseScan):
             label="Vulnerable"
         )
 
-        conn = self.scanner.handler.connect()
+        conn = self._scanner.handler.connect()
         conn.send(hello)
         while True:
             typ, ver, payload = self._recv_msg(conn)

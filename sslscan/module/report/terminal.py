@@ -259,9 +259,9 @@ class Terminal(BaseReport):
         print("")
 
     def run(self):
-        kb = self.scanner.get_knowledge_base()
+        kb = self._scanner.get_knowledge_base()
 
-        self._rating = self.scanner.load_rating(self.config.get_value("rating"))
+        self._rating = self._scanner.load_rating(self.config.get_value("rating"))
 
         self._print_client_ciphers(kb)
 

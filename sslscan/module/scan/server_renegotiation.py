@@ -15,9 +15,9 @@ class ServerRenegotiation(BaseScan):
         BaseScan.__init__(self, **kwargs)
 
     def run(self):
-        kb = self.scanner.get_knowledge_base()
+        kb = self._scanner.get_knowledge_base()
 
-        methods = self.scanner.get_enabled_methods()
+        methods = self._scanner.get_enabled_methods()
         methods.reverse()
         for method in methods:
             try:
@@ -28,10 +28,10 @@ class ServerRenegotiation(BaseScan):
 
             ctx.set_cipher_list("ALL:COMPLEMENT")
             ctx.set_options(_util.lib.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION)
-            conn = self.scanner.handler.connect()
+            conn = self._scanner.handler.connect()
             conn_ssl = SSL.Connection(ctx, conn)
             conn_ssl.set_tlsext_host_name(
-                self.scanner.handler.hostname.encode("utf-8")
+                self._scanner.handler.hostname.encode("utf-8")
             )
             conn_ssl.set_connect_state()
             try:

@@ -18,9 +18,9 @@ class ProtocolHTTP(BaseScan):
         BaseScan.__init__(self, **kwargs)
 
     def run(self):
-        kb = self.scanner.get_knowledge_base()
+        kb = self._scanner.get_knowledge_base()
 
-        methods = self.scanner.get_enabled_methods()
+        methods = self._scanner.get_enabled_methods()
         methods.reverse()
         for method in methods:
             try:
@@ -30,10 +30,10 @@ class ProtocolHTTP(BaseScan):
                 continue
 
             ctx.set_cipher_list("ALL:COMPLEMENT")
-            conn = self.scanner.handler.connect()
+            conn = self._scanner.handler.connect()
             conn_ssl = SSL.Connection(ctx, conn)
             conn_ssl.set_tlsext_host_name(
-                self.scanner.handler.hostname.encode("utf-8")
+                self._scanner.handler.hostname.encode("utf-8")
             )
             conn_ssl.set_connect_state()
             try:
@@ -43,7 +43,7 @@ class ProtocolHTTP(BaseScan):
                 conn_ssl.close()
                 continue
 
-            req_res = self.scanner.handler.request(conn_ssl)
+            req_res = self._scanner.handler.request(conn_ssl)
             conn_ssl.close()
 
             if req_res is None:

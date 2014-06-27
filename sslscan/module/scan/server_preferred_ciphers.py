@@ -16,9 +16,9 @@ class ServerPreferredCiphers(BaseScan):
         BaseScan.__init__(self, **kwargs)
 
     def run(self):
-        kb = self.scanner.get_knowledge_base()
+        kb = self._scanner.get_knowledge_base()
 
-        for method in self.scanner.get_enabled_methods():
+        for method in self._scanner.get_enabled_methods():
             try:
                 ctx = SSL.Context(method)
             except:
@@ -26,7 +26,7 @@ class ServerPreferredCiphers(BaseScan):
                 continue
 
             ctx.set_cipher_list("ALL:COMPLEMENT")
-            conn = self.scanner.handler.connect()
+            conn = self._scanner.handler.connect()
             conn_ssl = SSL.Connection(ctx, conn)
             conn_ssl.set_connect_state()
 

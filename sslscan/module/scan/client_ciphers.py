@@ -18,9 +18,9 @@ class ClientCiphers(BaseScan):
         BaseScan.__init__(self, **kwargs)
 
     def run(self):
-        kb = self.scanner.get_knowledge_base()
+        kb = self._scanner.get_knowledge_base()
 
-        for method in self.scanner.get_enabled_methods():
+        for method in self._scanner.get_enabled_methods():
             try:
                 ctx = SSL.Context(method)
             except:
