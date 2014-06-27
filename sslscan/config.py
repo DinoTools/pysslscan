@@ -4,6 +4,8 @@ A collection of classes to handle the configuration of a scanner or a module.
 
 import logging
 
+from sslscan.exception import OptionValueError
+
 
 logger = logging.getLogger(__name__)
 
@@ -13,10 +15,11 @@ class BaseConfig(object):
     The base config. All other configuration classes use it as base class.
     """
 
-    def __init__(self, options=None):
+    def __init__(self, options=None, parent=None):
         self._option_map = {}
         self._options = []
         self._option_groups = []
+        self._parent = parent
 
         if options is not None:
             for name, args in options:
@@ -36,6 +39,8 @@ class BaseConfig(object):
 
         if name in self._option_map:
             return False
+
+        kwargs["parent"] = self
         option = Option(name, **kwargs)
         self._option_map[name] = option
         if option.type == "bool" and option.negation is not None:
@@ -55,6 +60,7 @@ class BaseConfig(object):
             if name in self._option_map:
                 return False
         self._option_map.update(option_map)
+        group.set_parent(self)
         self._option_groups.append(group)
 
     def get_option(self, name):
@@ -72,6 +78,15 @@ class BaseConfig(object):
 
         return self._option_map
 
+    def get_parent(self):
+        """
+        Return the parent config object or None if no parent is set.
+
+        :return: Object or None
+        """
+
+        return self._parent
+
     def get_value(self, name, default=None):
         """
         Get the value of an option.
@@ -85,6 +100,15 @@ class BaseConfig(object):
         if option is None:
             return None
         return option.get_value(default=default)
+
+    def set_parent(self, parent):
+        """
+        Set the current parent config object.
+
+        :param Object|None parent: Set or reset parent config object
+        """
+
+        self._parent = parent
 
     def set_value(self, name, value):
         """
@@ -152,10 +176,18 @@ class BaseConfig(object):
 
 
 class ModuleConfig(BaseConfig):
-    """Holds the config of a module"""
+    """
+    Holds the config of a module
 
-    def __init__(self, **kwargs):
+    :param module: The module this config is for
+    """
+
+    def __init__(self, module=None, **kwargs):
+        self._module = module
         BaseConfig.__init__(self, **kwargs)
+
+    def get_module(self):
+        return self._module
 
 
 class ScanConfig(BaseConfig):
@@ -170,13 +202,15 @@ class Option(object):
 
     """
 
-    def __init__(self, name, action="store", default=None, help="", metavar="", type="string", values=None, negation=None):
+    def __init__(self, name, action="store", default=None, help="", metavar="",
+                 type="string", values=None, negation=None, parent=None):
         self.name = name
         self.action = action
         self.default = default
         self.help = help
         self.metavar = metavar
         self.negation = negation
+        self._parent = parent
         self.value = None
         if type == "choice" and values is None:
             values = {}
@@ -208,6 +242,15 @@ class Option(object):
 
         return value
 
+    def get_parent(self):
+        """
+        Return the parent config object or None if no parent is set.
+
+        :return: Object or None
+        """
+
+        return self._parent
+
     def get_value(self, default=None):
         """
         Get the value.
@@ -228,29 +271,35 @@ class Option(object):
         Set the value and returns True if it was successful or False if not.
 
         :param Mixed value: The value
-        :return: True or False
-        :rtype: Boolean
+        :raises sslscan.exception.OptionValueError: if types do not match
         """
+
+        logger.debug("Set value of option '%s' to '%r'", self.name, value)
 
         value = self.convert_value_type(value)
 
         if self.type == "choice":
-            if value not in self.values:
-                return False
+            values = self.values
+            if callable(values):
+                values = values(self)
+
+            if value not in values:
+                raise OptionValueError(option=self, value=value)
+
             self.value = value
-            return True
+            return
 
         if self.action == "store":
             self.value = value
-            return True
+            return
 
         if self.action == "append":
             if type(self.value) is not list:
                 self.value = []
             self.value.append(value)
-            return True
+            return
 
-        return False
+        raise OptionValueError(option=self, value=value)
 
 
 class OptionGroup(BaseConfig):

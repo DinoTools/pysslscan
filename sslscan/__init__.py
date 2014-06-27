@@ -109,7 +109,7 @@ class Scanner(object):
         if module is None:
             raise ModuleNotFound(name=name,base_class=base_class)
 
-        module = module()
+        module = module(scanner=self)
         module.config.set_values(config)
         self.append(module)
 
