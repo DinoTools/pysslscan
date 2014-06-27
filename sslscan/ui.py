@@ -5,7 +5,7 @@ import textwrap
 
 
 from sslscan import __version__, modules, Scanner
-from sslscan.exception import ModuleNotFound
+from sslscan.exception import ModuleNotFound, OptionValueError
 from sslscan.module.handler import BaseHandler
 from sslscan.module.report import BaseReport
 from sslscan.module.rating import BaseRating
@@ -108,6 +108,16 @@ def run_scan(args):
             scanner.append_load(name, options, base_class=BaseReport)
         except ModuleNotFound as e:
             logger.error("Report module '%s' not found", e.name)
+            return 1
+        except OptionValueError as e:
+            logger.error(
+                "An error occurred while setting the value of the configuration"
+                " option '{1}' to '{2}' for module '{0}'.".format(
+                    name,
+                    e.option.name,
+                    e.value
+                )
+            )
             return 1
 
     for host_uri in args.host_uris:
