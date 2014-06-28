@@ -24,29 +24,38 @@ def print_module_info(args):
 
     mod_mgr = scanner.get_module_manager()
     modules = mod_mgr.get_modules(base_class=args.base_class)
+
+    module_found = None
+    for module in modules:
+        if module.name == args.module_name:
+            module_found = module
+
+    if module_found is None:
+        logger.error(
+            "Unable to display help. Module '{0}' not found.".format(
+                args.module_name
+            )
+        )
+        return 1
+
     heading = "Module: {}".format(args.module_name)
     print()
     print("="*len(heading))
     print(heading)
     print("="*len(heading))
     print()
-    for module in modules:
-        if module.name != args.module_name:
-            continue
 
-        text = module.__doc__
-        if text is None:
-            text = ""
+    text = module.__doc__
+    if text is None:
+        text = ""
 
-        text = textwrap.dedent(text)
-        formatter = argparse.RawTextHelpFormatter("", width=80)
-        formatter.add_text(text)
+    text = textwrap.dedent(text)
+    formatter = argparse.RawTextHelpFormatter("", width=80)
+    formatter.add_text(text)
 
-        print(formatter.format_help())
+    print(formatter.format_help())
 
-        return 0
-
-    return 1
+    return 0
 
 def print_module_list(args):
     load_modules()
