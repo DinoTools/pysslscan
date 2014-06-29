@@ -22,7 +22,7 @@ class BaseReport(BaseModule):
     config_options = BaseModule.config_options + [
         (
             "rating", {
-                "help": "",
+                "help": "The rating module to use to highlight the results",
                 "type": "choice",
                 "values": get_rating_option_values
             }
