@@ -38,22 +38,74 @@ def print_module_info(args):
         )
         return 1
 
+    module = module(scanner=scanner)
+
     heading = "Module: {}".format(args.module_name)
-    print()
-    print("="*len(heading))
+    print("")
     print(heading)
     print("="*len(heading))
-    print()
+    print("")
 
     text = module.__doc__
     if text is None:
         text = ""
 
     text = textwrap.dedent(text)
-    formatter = argparse.RawTextHelpFormatter("", width=80)
-    formatter.add_text(text)
+    text = text.lstrip("\n")
 
-    print(formatter.format_help())
+    print(textwrap.fill(text, width=80))
+    print("")
+
+    for name in module.config.get_option_names():
+        option = module.config.get_option(name)
+
+        text = option.help
+        if text is None or text.strip() == "":
+            text = "No help text available"
+
+        indent_text = "{0} - ".format(
+            option.name
+        )
+
+        indent_len = len(indent_text)
+
+        print(
+            textwrap.fill(
+                text,
+                initial_indent=indent_text
+            )
+        )
+
+        print(
+            "{}Type: {}".format(
+                " "*indent_len,
+                option.type
+            )
+        )
+
+        print(
+            "{}Default: {}".format(
+                " "*indent_len,
+                option.default
+            )
+        )
+
+        values = option.values
+        if values is not None:
+            if callable(values):
+                values = values(option)
+            print(
+                textwrap.fill(
+                    "Values: {0}".format(
+                        ", ".join(values)
+                    ),
+                    initial_indent=" "*indent_len,
+                    subsequent_indent=" "*indent_len
+                )
+            )
+
+
+    print("")
 
     return 0
 
