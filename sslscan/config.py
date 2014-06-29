@@ -78,6 +78,13 @@ class BaseConfig(object):
 
         return self._option_map
 
+    def get_option_names(self):
+        """Return list of option names"""
+
+        names = [option.name for option in self._options]
+
+        return names
+
     def get_parent(self):
         """
         Return the parent config object or None if no parent is set.
