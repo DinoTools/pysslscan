@@ -310,8 +310,8 @@ def run():
                  * use TLSv1.0 method
                  * use TCP protocol handler
 
-                    %(prog)s scan --scan=server.ciphers --report=term --tls10 127.0.0.1
-                    %(prog)s scan --scan=server.ciphers --report=term --tls10 tcp://127.0.0.1
+                    %(prog)s --scan=server.ciphers --report=term --tls10 127.0.0.1
+                    %(prog)s --scan=server.ciphers --report=term --tls10 tcp://127.0.0.1
 
                 Perform a scan:
 
@@ -320,7 +320,7 @@ def run():
                   * use TLSv1.0 method
                   * use HTTP protocol handler
 
-                    %(prog)s scan --scan=server.ciphers --report=term --tls10 http://127.0.0.1
+                    %(prog)s --scan=server.ciphers --report=term --tls10 http://127.0.0.1
 
                 Perform a scan:
 
@@ -329,7 +329,7 @@ def run():
                   * use TLSv1.0 method
                   * use SMTP protocol handler
 
-                    %(prog)s scan --scan=server.ciphers --report=term --tls10 'smtp://127.0.0.1?starttls=true'
+                    %(prog)s --scan=server.ciphers --report=term --tls10 'smtp://127.0.0.1?starttls=true'
             """
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter
