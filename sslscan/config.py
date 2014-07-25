@@ -127,7 +127,7 @@ class BaseConfig(object):
 
         negate = False
         if type(option) == str:
-            option = self._mapped_global_options.get(name, None)
+            option = self._option_map.get(option, None)
             negate = True
 
         if option is None:
