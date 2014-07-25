@@ -94,6 +94,18 @@ def run_scan(args):
         logger.error("No report module specified")
         return 1
 
+    enabled_ssl_method_found = False
+    for name in ["ssl2", "ssl3", "tls10", "tls11", "tls12"]:
+        if scanner.config.get_value(name):
+            enabled_ssl_method_found = True
+            break
+    if not enabled_ssl_method_found:
+        logger.error(
+            "No SSL/TLS method enabled. "
+            "Example: Use --tls10 to enable TLS 1.0"
+        )
+        return 1
+
     for module in args.scan:
         name, sep, options = module.partition(":")
         try:
