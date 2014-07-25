@@ -358,7 +358,19 @@ def run():
         help="Hosts to scan",
     )
 
-    parser_scan.add_argument(
+    # Workaround to fix formating
+    tmp_description = textwrap.dedent("""
+        The options are evaluated in the following order.
+        1. Group options (e.g. --ssl)
+        2. Enable options (e.g. --tls10)
+        3. Disable options (e.g. --no-tls10)
+	"""
+    )
+    group_method = parser_scan.add_argument_group(
+        title="Enable/Disable methods",
+        description=tmp_description
+    )
+    group_method.add_argument(
         "--ssl",
         action="store_true",
         default=False,
@@ -366,7 +378,7 @@ def run():
         help="Enable SSLv2 and SSLv3 methods"
     )
 
-    parser_scan.add_argument(
+    group_method.add_argument(
         "--tls",
         action="store_true",
         default=False,
@@ -382,14 +394,14 @@ def run():
         ("tls12", "TLS1.2")
     ]
     for name, label in opt_names:
-        parser_scan.add_argument(
+        group_method.add_argument(
             "--%s" % name,
             action="store_true",
             default=False,
             dest=name,
             help="Enable %s" % label
         )
-        parser_scan.add_argument(
+        group_method.add_argument(
             "--no-%s" % name,
             action="store_true",
             default=False,
