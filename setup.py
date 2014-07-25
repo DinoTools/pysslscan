@@ -46,6 +46,6 @@ setup(
     },
     entry_points="""
     [console_scripts]
-    pysslscan = sslscan:run
+    pysslscan = sslscan.ui:run
     """
 )
