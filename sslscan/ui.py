@@ -339,17 +339,27 @@ def run():
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser_scan.set_defaults(func=run_scan)
-    parser_scan.add_argument(
+
+    # Workaround to fix formating
+    tmp_description = textwrap.dedent("""
+        Load and add new modules to the processing queue.
+    """)
+
+    group_module = parser_scan.add_argument_group(
+        title="Modules",
+        description=tmp_description
+    )
+    group_module.add_argument(
         "--report",
         action="append",
         default=[],
-        help="Add a report module to the processing queue",
+        help="Load and add a report module",
     )
-    parser_scan.add_argument(
+    group_module.add_argument(
         "--scan",
         action="append",
         default=[],
-        help="Add a scan module to the processing queue",
+        help="Load and add a scan module",
     )
     parser_scan.add_argument(
         "host_uris",
