@@ -89,7 +89,11 @@ def run_scan(args):
             scanner.config.set_value(name, True)
 
     args_dict = vars(args)
-    for name, opt_args in Scanner.config_options:
+    opt_names = ["ssl2", "ssl3", "tls10", "tls11", "tls12"]
+    for name in list(opt_names):
+        opt_names.append("no-%s" % name)
+
+    for name in opt_names:
         if name not in args_dict:
             continue
         if not args_dict.get(name):
@@ -370,13 +374,27 @@ def run():
         help="Enable all TLS 1.x methods"
     )
 
-    for name, opt_args in Scanner.config_options:
-        # ToDo: works only with bool
+    opt_names = [
+        ("ssl2", "SSLv2"),
+        ("ssl3", "SSLv3"),
+        ("tls10", "TLS1.0"),
+        ("tls11", "TLS1.1"),
+        ("tls12", "TLS1.2")
+    ]
+    for name, label in opt_names:
         parser_scan.add_argument(
             "--%s" % name,
             action="store_true",
-            default=opt_args.get("default"),
-            dest=name
+            default=False,
+            dest=name,
+            help="Enable %s" % label
+        )
+        parser_scan.add_argument(
+            "--no-%s" % name,
+            action="store_true",
+            default=False,
+            dest="no-%s" % name,
+            help="Disable %s" % label
         )
 
     # CMD: scan.info
