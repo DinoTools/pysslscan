@@ -80,11 +80,22 @@ def run_scan(args):
     load_modules()
     scanner = Scanner()
 
+    # Enable groups of methods
+    if args.enable_ssl:
+        for name in ["ssl2", "ssl3"]:
+            scanner.config.set_value(name, True)
+    if args.enable_tls:
+        for name in ["tls10", "tls11", "tls12"]:
+            scanner.config.set_value(name, True)
+
     args_dict = vars(args)
     for name, opt_args in Scanner.config_options:
-        if name in args_dict:
-            logger.debug("Set %s = %s", name, str(args_dict.get(name)))
-            scanner.config.set_value(name, args_dict.get(name))
+        if name not in args_dict:
+            continue
+        if not args_dict.get(name):
+            continue
+        logger.debug("Set %s = %s", name, str(args_dict.get(name)))
+        scanner.config.set_value(name, True)
 
     if len(args.scan) == 0:
         logger.error("No scan module specified")
@@ -341,6 +352,22 @@ def run():
         metavar="HOSTURI",
         nargs="+",
         help="Hosts to scan",
+    )
+
+    parser_scan.add_argument(
+        "--ssl",
+        action="store_true",
+        default=False,
+        dest="enable_ssl",
+        help="Enable SSLv2 and SSLv3 methods"
+    )
+
+    parser_scan.add_argument(
+        "--tls",
+        action="store_true",
+        default=False,
+        dest="enable_tls",
+        help="Enable all TLS 1.x methods"
     )
 
     for name, opt_args in Scanner.config_options:
