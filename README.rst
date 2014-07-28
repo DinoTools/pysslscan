@@ -9,8 +9,6 @@ It can be used as a library in other software projects and provides a command-li
 
 You can find more information in the `documentation`_.
 
-**State:** Version 0.1 is a proof of concept to write a SSL scanner based on the cryptography package and it looks very promising.
-
 
 Features
 --------
@@ -31,7 +29,7 @@ Requirements:
 * Python 2.7 or Python >= 3.2
 * Python packages:
 
-  * cryptography > 0.4
+  * cryptography >= 0.5
   * pyOpenSSL >= 0.14
   * six >= 1.4.1
 
