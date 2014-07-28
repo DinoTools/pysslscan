@@ -1,10 +1,13 @@
 Changelog
 =========
 
-0.2 - `master`_
+0.3 - `master`_
 ~~~~~~~~~~~~~~~
 
 .. note:: This version is not yet released and is under active development.
+
+0.2 - 2014-07-28
+~~~~~~~~~~~~~~~
 
 * Add: API documentation and docstrings
 * Add: Support for Python 2.x
