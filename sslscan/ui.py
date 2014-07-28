@@ -38,7 +38,7 @@ def print_module_info(args):
         )
         return 1
 
-    module = module(scanner=scanner)
+    module = module_found(scanner=scanner)
 
     heading = "Module: {}".format(args.module_name)
     print("")
