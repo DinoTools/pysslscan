@@ -27,8 +27,7 @@ class SMTP(TCP):
         TCP.__init__(self, **kwargs)
 
     def connect(self):
-        conn = socket()
-        conn.connect((self.host, self.port))
+        conn = TCP.connect(self)
 
         conn_smtp = PySMTP()
         conn_smtp.sock = conn
