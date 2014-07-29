@@ -20,12 +20,6 @@ class HTTP(TCP):
         self.port = 443
         TCP.__init__(self, **kwargs)
 
-    def connect(self):
-        conn = socket()
-        conn.connect((self.host, self.port))
-
-        return conn
-
     def request(self, conn):
         conn.send(b"GET / HTTP/1.1\r\n")
         conn.send(b"User-Agent: SSLScan\r\n")
