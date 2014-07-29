@@ -1,0 +1,30 @@
+# Maintainer: PhiBo <phibo at dinotools dot org>
+
+pkgname=python2-pysslscan
+pkgver=0.2
+pkgrel=1
+pkgdesc=''
+arch=('i686' 'x86_64')
+license=('LGPLv3+')
+url='https://pypi.python.org/pypi/sslscan'
+makedepends=('python2-setuptools')
+depends=('python2' 'python2-six' 'python2-cryptography>=0.5' 'python2-pyopenssl>=0.14')
+source=("https://pypi.python.org/packages/source/s/sslscan/sslscan-${pkgver}.tar.gz")
+md5sums=('e1e9710b8eba9e0401a3f7cf6858bf46')
+
+build() {
+   cd sslscan-${pkgver}
+   python2 setup.py build
+}
+
+check() {
+   cd "${srcdir}"/sslscan-${pkgver}
+   python2 setup.py test
+}
+ 
+package() {
+   cd sslscan-${pkgver}
+   python2 setup.py install --root="${pkgdir}" --optimize=1 --skip-build
+   # rename executable to prevent conflicts with Python 3.x version
+   mv ${pkgdir}/usr/bin/pysslscan ${pkgdir}/usr/bin/pysslscan2
+} 
