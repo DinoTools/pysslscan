@@ -6,6 +6,8 @@ Changelog
 
 .. note:: This version is not yet released and is under active development.
 
+* Add delay option for TCP connections
+
 0.2 - 2014-07-28
 ~~~~~~~~~~~~~~~
 
