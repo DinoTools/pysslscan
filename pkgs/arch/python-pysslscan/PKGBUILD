@@ -1,0 +1,28 @@
+# Maintainer: PhiBo <phibo at dinotools dot org>
+
+pkgname=python-pysslscan
+pkgver=0.2
+pkgrel=1
+pkgdesc=''
+arch=('i686' 'x86_64')
+license=('LGPLv3+')
+url='https://pypi.python.org/pypi/sslscan'
+makedepends=('python-setuptools')
+depends=('python' 'python-six' 'python-cryptography>=0.5' 'python-pyopenssl>=0.14')
+source=("https://pypi.python.org/packages/source/s/sslscan/sslscan-${pkgver}.tar.gz")
+md5sums=('e1e9710b8eba9e0401a3f7cf6858bf46')
+
+build() {
+   cd sslscan-${pkgver}
+   python3 setup.py build
+}
+
+check() {
+   cd "${srcdir}"/sslscan-${pkgver}
+   python3 setup.py test
+}
+ 
+package() {
+   cd sslscan-${pkgver}
+   python3 setup.py install --root="${pkgdir}" --optimize=1 --skip-build
+} 
