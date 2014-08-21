@@ -23,9 +23,9 @@ class Terminal(BaseReport):
 
         print("Supported Client Cipher(s):")
         for cipher in ciphers:
-            rating_bits = self._rating.rate('cipher.bits', cipher)
-            rating_method = self._rating.rate('cipher.method', cipher)
-            rating_name = self._rating.rate('cipher.name', cipher)
+            rating_bits = self._rating.rate('cipher.bits', cipher.bits)
+            rating_method = self._rating.rate('cipher.method', cipher.method)
+            rating_name = self._rating.rate('cipher.name', cipher.name)
             print(
                 "  {3}{0:7}{6} {4}{1:>9}{6} {5}{2}{6}".format(
                     cipher.method_name,
@@ -169,9 +169,9 @@ class Terminal(BaseReport):
 
         print("Supported Server Cipher(s):")
         for cipher in ciphers:
-            rating_bits = self._rating.rate('cipher.bits', cipher)
-            rating_method = self._rating.rate('cipher.method', cipher)
-            rating_name = self._rating.rate('cipher.name', cipher)
+            rating_bits = self._rating.rate('cipher.bits', cipher.bits)
+            rating_method = self._rating.rate('cipher.method', cipher.method)
+            rating_name = self._rating.rate('cipher.name', cipher.name)
             print(
                 "  {0:9} {5}{1:7}{8} {6}{2:>9}{8} {7}{3}{8}  {4}".format(
                     cipher.status_name.capitalize(),
@@ -192,7 +192,10 @@ class Terminal(BaseReport):
             return
 
         reneg_support = kb.get("server.renegotiation.support")
-        rating_renegotiation = self._rating.rate("renegotiation.support", reneg_support)
+        rating_renegotiation = self._rating.rate(
+            "server.renegotiation.support",
+            reneg_support
+        )
         rating_color = helper.rating2color(self.color, rating_renegotiation)
         print("TLS renegotiation:")
         print(
@@ -204,7 +207,10 @@ class Terminal(BaseReport):
         )
 
         reneg_secure = kb.get("server.renegotiation.secure")
-        rating_renegotiation = self._rating.rate("renegotiation.secure", reneg_secure)
+        rating_renegotiation = self._rating.rate(
+            "server.renegotiation.secure",
+            reneg_secure
+        )
         rating_color = helper.rating2color(self.color, rating_renegotiation)
         print(
             "  Secure: {1}{0}{2}".format(
@@ -222,9 +228,9 @@ class Terminal(BaseReport):
 
         print("Preferred Server Cipher(s):")
         for cipher in ciphers:
-            rating_bits = self._rating.rate('cipher.bits', cipher)
-            rating_method = self._rating.rate('cipher.method', cipher)
-            rating_name = self._rating.rate('cipher.name', cipher)
+            rating_bits = self._rating.rate('cipher.bits', cipher.bits)
+            rating_method = self._rating.rate('cipher.method', cipher.method)
+            rating_name = self._rating.rate('cipher.name', cipher.name)
             print(
                 "  {4}{0:7}{7} {5}{1:>9}{7} {6}{2}{7} {3}".format(
                     cipher.method_name,
