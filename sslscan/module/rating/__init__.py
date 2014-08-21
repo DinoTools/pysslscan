@@ -20,4 +20,6 @@ class BaseRating(BaseModule):
 class NoneRating(BaseRating):
     name="none"
 
-    _rules = {}
+    def __init__(self, **kwargs):
+        BaseModule.__init__(self, **kwargs)
+        self._rules = {}
