@@ -19,19 +19,19 @@ class RBSec(BaseRating):
 
     _rules = {
         "cipher.bits": [
-            lambda cipher: 1 if cipher.bits > 56 else None,
-            lambda cipher: 3 if cipher.bits > 40 else None,
-            lambda cipher: 5
+            lambda bits: 1 if bits > 56 else None,
+            lambda bits: 3 if bits > 40 else None,
+            lambda bits: 5
         ],
         "cipher.method": [
-            lambda cipher: 6 if cipher.method == SSL.SSLv2_METHOD else None
+            lambda method: 6 if method == SSL.SSLv2_METHOD else None
         ],
         "cipher.name": [
-            lambda cipher: 5 if "EXP" in cipher.name else None,
-            lambda cipher: 3 if "RC" in cipher.name else None,
-            lambda cipher: 5 if "ADH" in cipher.name else None
+            lambda name: 5 if "EXP" in name else None,
+            lambda name: 3 if "RC" in name else None,
+            lambda name: 5 if "ADH" in name else None
         ],
-        "renegotiation.secure": [
+        "server.renegotiation.secure": [
             lambda status: 6 if status == False else None,
             lambda status: 1 if status == True else None
         ]
