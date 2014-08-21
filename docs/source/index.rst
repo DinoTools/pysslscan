@@ -22,6 +22,13 @@ Contents:
    api
    changelog
 
+Development:
+
+.. toctree::
+    :maxdepth: 2
+
+    development/rating
+
 
 Indices and tables
 ==================
