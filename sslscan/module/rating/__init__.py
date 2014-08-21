@@ -4,6 +4,7 @@ from sslscan.module import BaseModule
 class BaseRating(BaseModule):
     def __init__(self, **kwargs):
         BaseModule.__init__(self, **kwargs)
+        self._rules = {}
 
     def rate(self, rule_id, data):
         rules = self._rules.get(rule_id)
