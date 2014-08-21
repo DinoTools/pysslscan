@@ -1,3 +1,4 @@
+from datetime import datetime
 from socket import socket
 
 from OpenSSL import SSL
@@ -85,6 +86,16 @@ class SSLLabs2009e(BaseRating):
             "cipher.method": [
                 lambda method: 6 if method == SSL.SSLv2_METHOD else None,
                 lambda method: 1 if method == SSL.TLSv1_2_METHOD else None
+            ],
+            "server.certificate.x509.signature_algorithm": [
+                lambda algorithm: 6 if algorithm.startswith("md2") else None,
+                lambda algorithm: 6 if algorithm.startswith("md5") else None,
+            ],
+            "server.certificate.x509.not_after": [
+                lambda date: 6 if date < datetime.now() else None
+            ],
+            "server.certificate.x509.not_before": [
+                lambda date: 6 if date > datetime.now() else None
             ],
             "server.renegotiation.secure": [
                 lambda status: 6 if status == False else None,
