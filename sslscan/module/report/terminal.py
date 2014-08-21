@@ -76,52 +76,117 @@ class Terminal(BaseReport):
             return
 
         x509name_members = [
-            "countryName",
-            "stateOrProvinceName",
-            "localityName",
-            "organizationName",
-            "organizationalUnitName",
-            "commonName",
-            "emailAddress"
+            ("country_name", "countryName"),
+            ("state_or_province_name", "stateOrProvinceName"),
+            ("locality_name", "localityName"),
+            ("organization_name", "organizationName"),
+            ("organizational_unit_name", "organizationalUnitName"),
+            ("common_name", "commonName"),
+            ("email_address", "emailAddress")
         ]
         print("SSL Certificate:")
 #        print("    Certificate blob:")
 #        print(x509.get_certificate_blob())
-        print("  Version: %lu" % x509.get_version())
-        tmp = x509.get_serial_number()
-        print("  Serial Number: %lu (0x%lx)" % (tmp, tmp))
-        print("  Signature Algorithm: %s" % x509.get_signature_algorithm().decode("ASCII"))
+
+        version = x509.get_version()
+        rating_version = self._rating.rate('server.certificate.x509.version', version)
+        print(
+            "  Version: {1}{0}{2}".format(
+                version,
+                helper.rating2color(self.color, rating_version),
+                self.color.RESET
+            )
+        )
+
+        serial = x509.get_serial_number()
+        rating_serial = self._rating.rate('server.certificate.x509.serial_number', serial)
+        print(
+            "  Serial Number: {1}{0} (0x{0:x}){2}".format(
+                serial,
+                helper.rating2color(self.color, rating_serial),
+                self.color.RESET
+            )
+        )
+
+        signature_algorithm = x509.get_signature_algorithm().decode("ASCII")
+        rating_signature_algorithm = self._rating.rate(
+            "server.certificate.x509.signature_algorithm",
+            signature_algorithm
+        )
+        print(
+            "  Signature Algorithm: {1}{0}{2}".format(
+                signature_algorithm,
+                helper.rating2color(self.color, rating_signature_algorithm),
+                self.color.RESET
+            )
+        )
+
         tmp_issuer = x509.get_issuer()
         if tmp_issuer:
             print("  Issuer:")
-            for tmp_name in x509name_members:
+            for rating_name, tmp_name in x509name_members:
                 tmp_value = getattr(tmp_issuer, tmp_name)
+                rating_tmp = self._rating.rate(
+                    "server.certificate.x509.{}".format(rating_name),
+                    tmp_value
+                )
                 if tmp_value is None:
                     tmp_value = ""
-                print("    {}: {}".format(
+                print("    {0}: {2}{1}{3}".format(
                     tmp_name,
-                    tmp_value
-                ))
+                    tmp_value,
+                    helper.rating2color(self.color, rating_tmp),
+                    self.color.RESET
+                )
+)
         tmp_date = datetime.datetime.strptime(
             x509.get_notBefore().decode("ASCII"),
             "%Y%m%d%H%M%SZ"
         )
-        print("  Not valid before: %s" % str(tmp_date))
+        rating_date = self._rating.rate(
+            "server.certificate.x509.not_before",
+            tmp_date
+        )
+        print(
+            "  Not valid before: {1}{0}{2}".format(
+                str(tmp_date),
+                helper.rating2color(self.color, rating_date),
+                self.color.RESET
+            )
+        )
+
         tmp_date = datetime.datetime.strptime(
             x509.get_notAfter().decode("ASCII"),
             "%Y%m%d%H%M%SZ"
         )
-        print("  Not valid after: %s" % str(tmp_date))
+        rating_date = self._rating.rate(
+            "server.certificate.x509.not_after",
+            tmp_date
+        )
+        print(
+            "  Not valid after: {1}{0}{2}".format(
+                str(tmp_date),
+                helper.rating2color(self.color, rating_date),
+                self.color.RESET
+            )
+        )
+
         tmp_subject = x509.get_subject()
         if tmp_subject:
             print("  Subject:")
-            for tmp_name in x509name_members:
+            for rating_name, tmp_name in x509name_members:
                 tmp_value = getattr(tmp_subject, tmp_name)
+                rating_tmp = self._rating.rate(
+                    "server.certificate.x509.{}".format(rating_name),
+                    tmp_value
+                )
                 if tmp_value is None:
                     tmp_value = ""
-                print("      {}: {}".format(
+                print("    {0}: {2}{1}{3}".format(
                     tmp_name,
-                    tmp_value
+                    tmp_value,
+                    helper.rating2color(self.color, rating_tmp),
+                    self.color.RESET
                 ))
 #        pk = x509.get_pubkey()
 #        if pk:
