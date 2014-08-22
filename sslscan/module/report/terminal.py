@@ -261,12 +261,11 @@ class Terminal(BaseReport):
             "server.renegotiation.support",
             reneg_support
         )
-        rating_color = helper.rating2color(self.color, rating_renegotiation)
         print("TLS renegotiation:")
         print(
             "  Supported: {1}{0}{2}".format(
                 "yes" if reneg_support else "no",
-                rating_color,
+                helper.rating2color(self.color, rating_renegotiation),
                 self.color.RESET
             )
         )
@@ -276,11 +275,10 @@ class Terminal(BaseReport):
             "server.renegotiation.secure",
             reneg_secure
         )
-        rating_color = helper.rating2color(self.color, rating_renegotiation)
         print(
             "  Secure: {1}{0}{2}".format(
                 "yes" if reneg_secure else "no",
-                rating_color,
+                helper.rating2color(self.color, rating_renegotiation),
                 self.color.RESET
             )
         )
@@ -316,16 +314,36 @@ class Terminal(BaseReport):
 
         print("Session:")
         compression = kb.get("server.session.compression")
+        rating_compression = self._rating.rate(
+            "server.session.compression",
+            compression
+        )
         if compression is not None:
             if not compression:
                 compression = "None"
-            print("  Compression: {0}".format(compression))
+            print(
+                "  Compression: {1}{0}{2}".format(
+                    compression,
+                    helper.rating2color(self.color, rating_compression),
+                    self.color.RESET
+                )
+            )
 
         expansion = kb.get("server.session.expansion")
+        rating_expansion = self._rating.rate(
+            "server.session.expansion",
+            expansion
+        )
         if expansion is not None:
             if not expansion:
                 expansion = "None"
-            print("  Expansion: {0}".format(expansion))
+            print(
+                "  Expansion: {0}".format(
+                    expansion,
+                    helper.rating2color(self.color, rating_expansion),
+                    self.color.RESET
+                )
+            )
 
         print("")
 
