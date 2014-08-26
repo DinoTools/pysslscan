@@ -12,6 +12,7 @@ class BaseHandler(BaseModule):
     ]
     def __init__(self, host=None, port=None, **kwargs):
         self.host = "127.0.0.1"
+        self._server_info = None
         BaseModule.__init__(self, **kwargs)
         if host is not None:
             self.host = host
@@ -20,6 +21,11 @@ class BaseHandler(BaseModule):
 
     def connect(self):
         return None
+
+    def get_server_info(self, conn=None):
+        if self._server_info is None and conn is not None:
+           self.request(conn)
+        return self._server_info
 
     @property
     def hostname(self):
