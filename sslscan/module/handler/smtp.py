@@ -1,8 +1,12 @@
+import re
 from smtplib import SMTP as PySMTP
 from socket import socket
 
 from sslscan import modules
 from sslscan.module.handler.tcp import TCP
+
+
+regex_banner = re.compile(b"^(?P<code>\d+) (?P<hostname>\S+) \S+ (?P<banner>.*)$")
 
 
 class SMTP(TCP):
@@ -26,25 +30,45 @@ class SMTP(TCP):
         self.port = 25
         TCP.__init__(self, **kwargs)
 
-    def connect(self):
-        conn = TCP.connect(self)
+    def _connect(self, conn):
+        server_info = {}
+        buf = conn.recv(4096)
+        if not buf.startswith(b"220"):
+            return None
 
-        conn_smtp = PySMTP()
-        conn_smtp.sock = conn
-        conn_smtp.getreply()
-        conn_smtp.ehlo_or_helo_if_needed()
-        if self.config.get_value("starttls"):
-            print("starttls enabled")
-            if not conn_smtp.has_extn("starttls"):
-                print("no starttls")
-                return False
-            (resp, reply) = conn_smtp.docmd("STARTTLS")
-            print(resp)
-            print(reply)
-            if resp != "220":
-                return False
+        if self._server_info is None:
+            m = regex_banner.match(buf)
+            if m:
+                server_info["banner"] = m.group("banner")
+
+        conn.send(b"EHLO example.org\r\n")
+        buf = conn.recv(4096)
+        if not buf.startswith(b"250"):
+            return None
+
+        if self._server_info is None:
+            self._server_info = server_info
+
+    def connect(self):
+        # ToDo: raise exception
+        conn = TCP.connect(self)
+        if not self.config.get_value("starttls"):
+            return conn
+
+        self._connect(conn)
+
+        conn.send(b"STARTTLS\r\n")
+        buf = conn.recv(4096)
+        if not buf.startswith(b"220"):
+            return None
 
         return conn
+
+    def get_server_info(self, conn=None):
+        if self._server_info is None and conn is not None:
+           self._connect(conn)
+        return self._server_info
+
 
 
 modules.register(SMTP)
