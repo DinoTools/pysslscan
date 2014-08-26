@@ -43,7 +43,7 @@ class ProtocolHTTP(BaseScan):
                 conn_ssl.close()
                 continue
 
-            req_res = self._scanner.handler.request(conn_ssl)
+            req_res = self._scanner.handler.get_server_info(conn_ssl)
             conn_ssl.close()
 
             if req_res is None:
