@@ -53,7 +53,8 @@ class HTTP(TCP):
             name, sep, value = line.partition(":")
             result["headers"].append((name, value))
 
-        return result
+        if self._server_info is None:
+            self._server_info = result
 
 
 modules.register(HTTP)
