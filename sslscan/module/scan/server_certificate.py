@@ -40,7 +40,6 @@ class ServerCertificate(BaseScan):
 
             cert = conn_ssl.get_peer_certificate()
             kb = self._scanner.get_knowledge_base()
-            print(cert)
             kb.set("server.certificate", cert)
 
             compression_ssl = _util.lib.SSL_get_current_compression(conn_ssl._ssl)
