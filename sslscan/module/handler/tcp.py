@@ -28,7 +28,7 @@ class TCP(BaseHandler):
     ]
 
     def __init__(self, **kwargs):
-        if getattr(self, "port") is None:
+        if getattr(self, "port", None) is None:
             self.port = 443
         self.time_last_connect = None
         BaseHandler.__init__(self, **kwargs)
