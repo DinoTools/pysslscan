@@ -154,10 +154,11 @@ class Scanner(object):
         """
 
         logger.debug("Loading handler from URI: %s", host_uri)
-        if not re.search('^([a-z]+:)?\/\/', host_uri):
+        if not re.search('^([a-zA-Z0-9]+:)?\/\/', host_uri):
             host_uri = '//' + host_uri
         uri = urlparse(host_uri)
         name = uri.scheme
+        name = name.lower()
         if name == '':
             name = 'tcp'
         module = self._module_manager.get(name, base_class=BaseHandler)
