@@ -70,10 +70,19 @@ class Terminal(BaseReport):
                 )
             print("")
 
-    def _print_server_certificate(self, kb):
-        x509 = kb.get("server.certificate")
-        if x509 is None:
-            return
+    def _print_server_certificate_chain(self, kb):
+        cert_chain = kb.get("server.certificate_chain")
+        cert_chain.reverse()
+        for i, x509 in enumerate(cert_chain):
+            print(
+                "SSL Certificate({0}/{1}):".format(
+                    i + 1,
+                    len(cert_chain)
+                )
+            )
+            self._print_server_certificate_x509(x509)
+
+    def _print_server_certificate_x509(self, x509):
 
         x509name_members = [
             ("country_name", "countryName"),
@@ -84,7 +93,6 @@ class Terminal(BaseReport):
             ("common_name", "commonName"),
             ("email_address", "emailAddress")
         ]
-        print("SSL Certificate:")
 #        print("    Certificate blob:")
 #        print(x509.get_certificate_blob())
 
@@ -358,7 +366,7 @@ class Terminal(BaseReport):
 
         self._print_server_preferred_ciphers(kb)
 
-        self._print_server_certificate(kb)
+        self._print_server_certificate_chain(kb)
 
         self._print_server_session(kb)
 
