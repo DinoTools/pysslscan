@@ -1,10 +1,13 @@
 Changelog
 =========
 
-0.3 - `master`_
+0.4 - `master`_
 ~~~~~~~~~~~~~~~
 
 .. note:: This version is not yet released and is under active development.
+
+0.3 - 2014-09-28
+~~~~~~~~~~~~~~~~
 
 * Set certificate chain in knowledge base
 * Support numbers in handler names
@@ -16,7 +19,7 @@ Changelog
 * Add delay option for TCP connections
 
 0.2 - 2014-07-28
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
 
 * Add: API documentation and docstrings
 * Add: Support for Python 2.x
