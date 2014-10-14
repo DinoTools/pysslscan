@@ -124,17 +124,18 @@ class VulnerabilityHeartbleed(BaseScan):
             if typ == 24:
                 kb_vuln.value = True
                 break
-
+        payload_length = 0
+        if payload is not None:
+            payload = len(payload)
         kb.set(
             "vulnerability.custom.heartbleed.vulnerable",
             kb_vuln
         )
-
         kb.set(
             "vulnerability.custom.heartbleed.payload.length",
             ResultValue(
                 label="Payload-Length",
-                value=len(payload)
+                value=payload_length
             )
         )
 
