@@ -72,6 +72,8 @@ class Terminal(BaseReport):
 
     def _print_server_certificate_chain(self, kb):
         cert_chain = kb.get("server.certificate_chain")
+        if cert_chain is None:
+            return
         cert_chain.reverse()
         for i, x509 in enumerate(cert_chain):
             print(
