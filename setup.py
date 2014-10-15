@@ -36,6 +36,7 @@ setup(
     ],
     install_requires=[
         "cryptography >= 0.5",
+        "flextls >= 0.1",
         "pyopenssl >= 0.14",
         "six >= 1.4.1"
     ],
