@@ -1,10 +1,11 @@
+import flextls
 from flextls.field import CipherSuiteField, CompressionMethodField
 from flextls.protocol.handshake import ClientHello, Handshake, ServerHello
 from flextls.protocol.handshake.extension import EllipticCurves, SignatureAlgorithms, Extension, SessionTicketTLS
 from flextls.protocol.record import RecordSSLv3
 
 from sslscan import modules
-from sslscan.kb import Cipher
+from sslscan.kb import CipherResult
 from sslscan.module.scan import BaseScan
 
 
@@ -23,18 +24,33 @@ class ServerCiphers(BaseScan):
 
         versions = []
         if self._scanner.config.get_value('ssl2'):
-            versions.append((2, 0))
+            versions.append(flextls.registry.version.SSLv2)
         if self._scanner.config.get_value('ssl3'):
-            versions.append((3, 0))
+            versions.append(flextls.registry.version.SSLv3)
         if self._scanner.config.get_value('tls10'):
-            versions.append((3, 1))
+            versions.append(flextls.registry.version.TLSv10)
         if self._scanner.config.get_value('tls11'):
-            versions.append((3, 2))
+            versions.append(flextls.registry.version.TLSv11)
         if self._scanner.config.get_value('tls12'):
-            versions.append((3, 3))
+            versions.append(flextls.registry.version.TLSv12)
 
-        for ver_major, ver_minor in versions:
-            cipher_suites = [i for i in range(0, 0x1000)]
+        for protocol_version in versions:
+            if protocol_version == flextls.registry.version.SSLv2:
+                # ToDo:
+                continue
+            else:
+                ver_major = 3
+                if protocol_version == flextls.registry.version.SSLv3:
+                    ver_minor = 0
+                elif protocol_version == flextls.registry.version.TLSv10:
+                    ver_minor = 1
+                elif protocol_version == flextls.registry.version.TLSv11:
+                    ver_minor = 2
+                elif protocol_version == flextls.registry.version.TLSv12:
+                    ver_minor = 3
+
+            cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
+            #cipher_suites = [i for i in range(0, 0x1000)]
             while True:
                 conn = self._scanner.handler.connect()
 
@@ -80,13 +96,15 @@ class ServerCiphers(BaseScan):
                 (record, data) = RecordSSLv3.decode(data)
                 if isinstance(record.payload.payload, ServerHello):
                     server_hello = record.payload.payload
+                    cipher_suite = flextls.registry.tls.cipher_suites.get(
+                        server_hello.cipher_suite
+                    )
                     kb.append(
                         'server.ciphers',
-                        Cipher(
-                            bits=0,
-                            method="TLS %d.%d" % (ver_major, ver_minor),
-                            name=server_hello.cipher_suite,
-                            status=1
+                        CipherResult(
+                            protocol_version=protocol_version,
+                            cipher_suite=cipher_suite,
+                            status=1,
                         )
                     )
                     cipher_suites.remove(server_hello.cipher_suite)
