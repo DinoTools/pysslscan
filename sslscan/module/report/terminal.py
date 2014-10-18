@@ -244,17 +244,20 @@ class Terminal(BaseReport):
 
         print("Supported Server Cipher(s):")
         for cipher in ciphers:
-            rating_bits = self._rating.rate('cipher.bits', cipher.bits)
-            rating_method = self._rating.rate('cipher.method', cipher.method)
-            rating_name = self._rating.rate('cipher.name', cipher.name)
+            rating_bits = self._rating.rate('cipher.bits', cipher.cipher_suite.bits)
+            rating_protocol_version = self._rating.rate(
+                'cipher.protocol_version',
+                cipher.protocol_version
+            )
+            rating_name = self._rating.rate('cipher.name', cipher.cipher_suite.name)
             print(
                 "  {0:9} {5}{1:7}{8} {6}{2:>9}{8} {7}{3}{8}  {4}".format(
                     cipher.status_name.capitalize(),
-                    cipher.method_name,
-                    "%d bits" % cipher.bits,
-                    cipher.name,
+                    cipher.protocol_version_name,
+                    "%d bits" % cipher.cipher_suite.bits,
+                    cipher.cipher_suite.name,
                     "", # reserved for alert info
-                    helper.rating2color(self.color, rating_method),
+                    helper.rating2color(self.color, rating_protocol_version),
                     helper.rating2color(self.color, rating_bits),
                     helper.rating2color(self.color, rating_name),
                     self.color.RESET
