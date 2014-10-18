@@ -21,6 +21,7 @@ Example 3::
     >>> group.append(value)
 """
 
+import flextls.helper
 from sslscan import _helper as helper
 
 class KnowledgeBase(object):
@@ -105,22 +106,19 @@ class KnowledgeBase(object):
     def set(self, kb_id, value):
         self._items[kb_id] = value
 
-class Cipher(object):
+class CipherResult(object):
     """
     This class is used to store all information for a cipher.
     """
 
-    def __init__(self, method=None, name=None, bits=None, status=None):
-        self.method = method
-        if isinstance(name, bytes):
-            name = name.decode("ASCII")
-        self.name = name
-        self.bits = bits
+    def __init__(self, protocol_version, cipher_suite, status=None):
+        self.protocol_version = protocol_version
+        self.cipher_suite = cipher_suite
         self.status = status
 
     @property
-    def method_name(self):
-        return helper.get_method_name(self.method)
+    def protocol_version_name(self):
+        return flextls.helper.get_version_name(self.protocol_version)
 
     @property
     def status_name(self):
