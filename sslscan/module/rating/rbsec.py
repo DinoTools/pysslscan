@@ -1,6 +1,6 @@
 from socket import socket
 
-from OpenSSL import SSL
+from flextls import registry as reg
 
 from sslscan import modules
 from sslscan.module.rating import BaseRating
@@ -25,8 +25,8 @@ class RBSec(BaseRating):
                 lambda bits: 3 if bits > 40 else None,
                 lambda bits: 5
             ],
-            "cipher.method": [
-                lambda method: 6 if method == SSL.SSLv2_METHOD else None
+            "cipher.protocol_version": [
+                lambda method: 6 if method == reg.version.SSLv2 else None,
             ],
             "cipher.name": [
                 lambda name: 5 if "EXP" in name else None,

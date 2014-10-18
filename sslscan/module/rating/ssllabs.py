@@ -1,7 +1,7 @@
 from datetime import datetime
 from socket import socket
 
-from OpenSSL import SSL
+from flextls import registry as reg
 
 from sslscan import modules
 from sslscan.module.rating import BaseRating
@@ -25,9 +25,9 @@ class SSLLabs2009c(BaseRating):
                 lambda bits: 2 if bits < 256 else None,
                 lambda bits: 1 if bits >= 256 else None
             ],
-            "cipher.method": [
-                lambda method: 6 if method == SSL.SSLv2_METHOD else None,
-                lambda method: 1 if method == SSL.TLSv1_2_METHOD else None
+            "cipher.protocol_version": [
+                lambda method: 6 if method == reg.version.SSLv2 else None,
+                lambda method: 1 if method == reg.version.TLSv12 else None,
             ],
             "server.renegotiation.secure": [
                 lambda status: 6 if status == False else None,
@@ -54,9 +54,9 @@ class SSLLabs2009d(BaseRating):
                 lambda bits: 2 if bits < 256 else None,
                 lambda bits: 1 if bits >= 256 else None
             ],
-            "cipher.method": [
-                lambda method: 6 if method == SSL.SSLv2_METHOD else None,
-                lambda method: 1 if method == SSL.TLSv1_2_METHOD else None
+            "cipher.protocol_version": [
+                lambda method: 6 if method == reg.version.SSLv2 else None,
+                lambda method: 1 if method == reg.version.TLSv12 else None,
             ],
             "server.renegotiation.secure": [
                 lambda status: 6 if status == False else None,
@@ -83,9 +83,9 @@ class SSLLabs2009e(BaseRating):
                 lambda bits: 3 if bits < 256 else None,
                 lambda bits: 0 if bits >= 256 else None
             ],
-            "cipher.method": [
-                lambda method: 6 if method == SSL.SSLv2_METHOD else None,
-                lambda method: 1 if method == SSL.TLSv1_2_METHOD else None
+            "cipher.protocol_version": [
+                lambda method: 6 if method == reg.version.SSLv2 else None,
+                lambda method: 1 if method == reg.version.TLSv12 else None,
             ],
             "server.certificate.x509.signature_algorithm": [
                 lambda algorithm: 6 if algorithm.startswith("md2") else None,
