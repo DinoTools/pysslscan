@@ -1,8 +1,10 @@
 import flextls
 from flextls.field import CipherSuiteField, CompressionMethodField
+from flextls.field import SSLv2CipherSuiteField
 from flextls.protocol.handshake import ClientHello, Handshake, ServerHello
+from flextls.protocol.handshake import SSLv2ClientHello, SSLv2ServerHello
 from flextls.protocol.handshake.extension import EllipticCurves, SignatureAlgorithms, Extension, SessionTicketTLS
-from flextls.protocol.record import RecordSSLv3
+from flextls.protocol.record import RecordSSLv2, RecordSSLv3
 
 from sslscan import modules
 from sslscan.kb import CipherResult
@@ -18,6 +20,39 @@ class ServerCiphers(BaseScan):
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
+
+    def _scan_ssl2(self, protocol_version):
+        kb = self._scanner.get_knowledge_base()
+        cipher_suites = flextls.registry.sslv2.cipher_suites.get_ids()
+
+        conn = self._scanner.handler.connect()
+
+        hello = SSLv2ClientHello()
+        hello.version.major = 0
+        hello.version.minor = 2
+        hello.challenge = b"A"*16
+
+        for i in cipher_suites:
+            cipher = SSLv2CipherSuiteField()
+            cipher.value = i
+            hello.cipher_suites.append(cipher)
+
+        msg_hello = RecordSSLv2() + hello
+
+        conn.send(msg_hello.encode())
+        data = conn.recv(4096)
+        (record, data) = RecordSSLv2.decode(data)
+        if isinstance(record.payload, SSLv2ServerHello):
+            for i in record.payload.cipher_suites:
+                cipher_suite = flextls.registry.sslv2.cipher_suites.get(i.value)
+                kb.append(
+                    'server.ciphers',
+                    CipherResult(
+                        protocol_version=protocol_version,
+                        cipher_suite=cipher_suite,
+                        status=1,
+                    )
+                )
 
     def _scan_ssl3(self, protocol_version):
         kb = self._scanner.get_knowledge_base()
@@ -109,8 +144,7 @@ class ServerCiphers(BaseScan):
 
         for protocol_version in versions:
             if protocol_version == flextls.registry.version.SSLv2:
-                # ToDo:
-                continue
+                self._scan_ssl2(protocol_version)
             else:
                 self._scan_ssl3(protocol_version)
 
