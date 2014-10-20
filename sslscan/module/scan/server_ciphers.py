@@ -130,19 +130,7 @@ class ServerCiphers(BaseScan):
                 break
 
     def run(self):
-        versions = []
-        if self._scanner.config.get_value('ssl2'):
-            versions.append(flextls.registry.version.SSLv2)
-        if self._scanner.config.get_value('ssl3'):
-            versions.append(flextls.registry.version.SSLv3)
-        if self._scanner.config.get_value('tls10'):
-            versions.append(flextls.registry.version.TLSv10)
-        if self._scanner.config.get_value('tls11'):
-            versions.append(flextls.registry.version.TLSv11)
-        if self._scanner.config.get_value('tls12'):
-            versions.append(flextls.registry.version.TLSv12)
-
-        for protocol_version in versions:
+        for protocol_version in self._scanner.get_enabled_versions():
             if protocol_version == flextls.registry.version.SSLv2:
                 self._scan_ssl2(protocol_version)
             else:
