@@ -54,87 +54,25 @@ class ServerCiphers(BaseScan):
                     )
                 )
 
-    def _scan_ssl3(self, protocol_version):
-        kb = self._scanner.get_knowledge_base()
-
-        ver_major = 3
-        if protocol_version == flextls.registry.version.SSLv3:
-            ver_minor = 0
-        elif protocol_version == flextls.registry.version.TLSv10:
-            ver_minor = 1
-        elif protocol_version == flextls.registry.version.TLSv11:
-            ver_minor = 2
-        elif protocol_version == flextls.registry.version.TLSv12:
-            ver_minor = 3
-
-        cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
-        #cipher_suites = [i for i in range(0, 0x1000)]
-        while True:
-            conn = self._scanner.handler.connect()
-
-            hello = ClientHello()
-
-            for i in cipher_suites:
-                cipher = CipherSuiteField()
-                cipher.value = i
-                hello.cipher_suites.append(cipher)
-
-            comp = CompressionMethodField()
-            comp.value = 0
-
-            hello.compression_methods.append(comp)
-            ext_elliptic_curves = EllipticCurves()
-            a = ext_elliptic_curves.get_field("elliptic_curve_list")
-            for i in range(1, 25):
-                v = a.item_class("unnamed", None)
-                v.value = i
-                a.value.append(v)
-
-            hello.extensions.append(Extension() + ext_elliptic_curves)
-
-            ext_signature_algorithm = SignatureAlgorithms()
-            a = ext_signature_algorithm.get_field("supported_signature_algorithms")
-            for i in range(0, 7):
-                for j in range(0, 4):
-                    v = a.item_class("unnamed")
-                    v.hash = i
-                    v.signature = j
-                    a.value.append(v)
-
-            hello.extensions.append(Extension() + ext_signature_algorithm)
-
-            hello.extensions.append(Extension() + SessionTicketTLS())
-
-            msg_hello = RecordSSLv3() + (Handshake() + hello)
-            msg_hello.payload.payload.random.random_bytes = b"A"*32
-            msg_hello.version.minor = ver_minor
-            msg_hello.payload.payload.version.minor = ver_minor
-            conn.send(msg_hello.encode())
-            data = conn.recv(4096)
-            (record, data) = RecordSSLv3.decode(data)
-            if isinstance(record.payload.payload, ServerHello):
-                server_hello = record.payload.payload
-                cipher_suite = flextls.registry.tls.cipher_suites.get(
-                    server_hello.cipher_suite
-                )
-                kb.append(
-                    'server.ciphers',
-                    CipherResult(
-                        protocol_version=protocol_version,
-                        cipher_suite=cipher_suite,
-                        status=1,
-                    )
-                )
-                cipher_suites.remove(server_hello.cipher_suite)
-            else:
-                break
-
     def run(self):
+        kb = self._scanner.get_knowledge_base()
         for protocol_version in self._scanner.get_enabled_versions():
             if protocol_version == flextls.registry.version.SSLv2:
                 self._scan_ssl2(protocol_version)
             else:
-                self._scan_ssl3(protocol_version)
-
+                cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
+                detected_ciphers = self._scan_cipher_suites_tls(protocol_version, cipher_suites)
+                for cipher_id in detected_ciphers:
+                    cipher_suite = flextls.registry.tls.cipher_suites.get(
+                        cipher_id
+                    )
+                    kb.append(
+                        'server.ciphers',
+                        CipherResult(
+                            protocol_version=protocol_version,
+                            cipher_suite=cipher_suite,
+                            status=1,
+                        )
+                    )
 
 modules.register(ServerCiphers)
