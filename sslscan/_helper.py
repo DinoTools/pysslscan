@@ -1,20 +1,3 @@
-from OpenSSL import SSL
-
-
-def get_method_name(method_id):
-    if method_id == SSL.SSLv2_METHOD:
-        return 'SSLv2'
-    if method_id == SSL.SSLv3_METHOD:
-        return 'SSLv3'
-    if method_id == SSL.TLSv1_METHOD:
-        return 'TLSv1.0'
-    if method_id == SSL.TLSv1_1_METHOD:
-        return 'TLSv1.1'
-    if method_id == SSL.TLSv1_2_METHOD:
-        return 'TLSv1.2'
-
-    return 'unknown'
-
 def rating2color(color, level):
     # ToDo:
     if level == None:
