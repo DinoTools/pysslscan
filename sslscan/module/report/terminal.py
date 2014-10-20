@@ -304,16 +304,36 @@ class Terminal(BaseReport):
 
         print("Preferred Server Cipher(s):")
         for cipher in ciphers:
-            rating_bits = self._rating.rate('cipher.bits', cipher.bits)
-            rating_method = self._rating.rate('cipher.method', cipher.method)
-            rating_name = self._rating.rate('cipher.name', cipher.name)
+            rating_version = self._rating.rate('cipher.version', cipher.protocol_version)
+            if cipher.cipher_suite == None:
+                print(
+                    "  {1}{0:7}{2} Protocol version not supported".format(
+                        cipher.protocol_version_name,
+                        helper.rating2color(self.color, rating_version),
+                        self.color.RESET
+                    )
+                )
+                continue
+
+            if cipher.cipher_suite == False:
+                print(
+                    "  {1}{0:7}{2} No preferred cipher suite".format(
+                        cipher.protocol_version_name,
+                        helper.rating2color(self.color, rating_version),
+                        self.color.RESET
+                    )
+                )
+                continue
+
+            rating_bits = self._rating.rate('cipher.bits', cipher.cipher_suite.bits)
+            rating_name = self._rating.rate('cipher.name', cipher.cipher_suite.name)
             print(
                 "  {4}{0:7}{7} {5}{1:>9}{7} {6}{2}{7} {3}".format(
-                    cipher.method_name,
-                    "%d bits" % cipher.bits,
-                    cipher.name,
+                    cipher.protocol_version_name,
+                    "%d bits" % cipher.cipher_suite.bits,
+                    cipher.cipher_suite.name,
                     "", # alert info
-                    helper.rating2color(self.color, rating_method),
+                    helper.rating2color(self.color, rating_version),
                     helper.rating2color(self.color, rating_bits),
                     helper.rating2color(self.color, rating_name),
                     self.color.RESET
