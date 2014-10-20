@@ -6,6 +6,12 @@ Changelog
 
 .. note:: This version is not yet released and is under active development.
 
+0.3.1 - 2014-10-20
+~~~~~~~~~~~~~~~~~~
+
+* Fix error if cert chain not in kb
+* Prevent the vuln_heartbleed scan from attempting to call len on payload when it is None. (Thanks to David Black)
+
 0.3 - 2014-09-28
 ~~~~~~~~~~~~~~~~
 
