@@ -1,7 +1,7 @@
-from OpenSSL import SSL, _util
+import flextls
 
 from sslscan import modules
-from sslscan.kb import Cipher
+from sslscan.kb import CipherResult
 from sslscan.module.scan import BaseScan
 
 
@@ -15,41 +15,45 @@ class ServerPreferredCiphers(BaseScan):
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
 
+
     def run(self):
         kb = self._scanner.get_knowledge_base()
 
-        for method in self._scanner.get_enabled_methods():
-            try:
-                ctx = SSL.Context(method)
-            except:
-                # ToDo:
+        for protocol_version in self._scanner.get_enabled_versions():
+            if protocol_version == flextls.registry.version.SSLv2:
                 continue
+            else:
+                cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
+                tmp1 = self._scan_cipher_suites_tls(protocol_version, cipher_suites, limit=2)
+                cipher_suites.reverse()
+                tmp2 = self._scan_cipher_suites_tls(protocol_version, cipher_suites, limit=1)
 
-            ctx.set_cipher_list("ALL:COMPLEMENT")
-            conn = self._scanner.handler.connect()
-            conn_ssl = SSL.Connection(ctx, conn)
-            conn_ssl.set_connect_state()
+                if len(tmp1) == 0:
+                    kb.append(
+                        "server.preferred_ciphers",
+                        CipherResult(
+                            protocol_version=protocol_version,
+                            cipher_suite=None,
+                            status=0,
+                        )
+                    )
+                    continue
 
-            cipher_status = _util.lib.SSL_do_handshake(conn_ssl._ssl)
+                if tmp1[0] == tmp2[0]:
+                    cipher_suite = flextls.registry.tls.cipher_suites.get(
+                        tmp1[0]
+                    )
+                else:
+                    cipher_suite = False
 
-            cipher_ssl = _util.lib.SSL_get_current_cipher(conn_ssl._ssl)
-
-            cipher = Cipher(
-                bits=_util.lib.SSL_CIPHER_get_bits(cipher_ssl, _util.ffi.NULL),
-                method=method,
-                name=_util.ffi.string(_util.lib.SSL_CIPHER_get_name(cipher_ssl))
-            )
-
-            if cipher_status < 0:
-                cipher.status = -1
-            elif cipher_status == 0:
-                cipher.status = 0
-            elif cipher_status == 1:
-                cipher.status = 1
-
-            kb.append("server.preferred_ciphers", cipher)
-
-            conn_ssl.close()
+                kb.append(
+                    "server.preferred_ciphers",
+                    CipherResult(
+                        protocol_version=protocol_version,
+                        cipher_suite=cipher_suite,
+                        status=1,
+                    )
+                )
 
 
 modules.register(ServerPreferredCiphers)
