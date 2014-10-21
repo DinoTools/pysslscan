@@ -44,7 +44,7 @@ class BaseScan(BaseModule):
             hello.compression_methods.append(comp)
             ext_elliptic_curves = EllipticCurves()
             a = ext_elliptic_curves.get_field("elliptic_curve_list")
-            for i in range(1, 25):
+            for i in flextls.registry.ec.named_curves.get_ids():
                 v = a.item_class("unnamed", None)
                 v.value = i
                 a.value.append(v)
