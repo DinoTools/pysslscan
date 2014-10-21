@@ -28,6 +28,9 @@ class BaseScan(BaseModule):
 
         detected_ciphers = []
         count = 0
+
+        hash_algorithms = flextls.registry.tls.hash_algorithms.get_ids()
+        sign_algorithms = flextls.registry.tls.signature_algorithms.get_ids()
         while True:
             conn = self._scanner.handler.connect()
 
@@ -53,8 +56,8 @@ class BaseScan(BaseModule):
 
             ext_signature_algorithm = SignatureAlgorithms()
             a = ext_signature_algorithm.get_field("supported_signature_algorithms")
-            for i in range(0, 7):
-                for j in range(0, 4):
+            for i in hash_algorithms:
+                for j in sign_algorithms:
                     v = a.item_class("unnamed")
                     v.hash = i
                     v.signature = j
