@@ -23,3 +23,6 @@ class OptionValueError(BaseConfigError):
             self.value
         )
         return s
+
+class Timeout(Exception):
+    pass
