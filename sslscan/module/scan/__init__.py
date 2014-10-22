@@ -1,4 +1,7 @@
+from datetime import datetime
+
 import flextls
+from flextls.exception import NotEnoughData
 from flextls.field import CipherSuiteField, CompressionMethodField
 from flextls.field import SSLv2CipherSuiteField
 from flextls.protocol.handshake import ClientHello, Handshake, ServerHello
@@ -6,6 +9,7 @@ from flextls.protocol.handshake import SSLv2ClientHello, SSLv2ServerHello
 from flextls.protocol.handshake.extension import EllipticCurves, SignatureAlgorithms, Extension, SessionTicketTLS
 from flextls.protocol.record import RecordSSLv2, RecordSSLv3
 
+from sslscan.exception import Timeout
 from sslscan.module import BaseModule
 
 class BaseScan(BaseModule):
@@ -72,19 +76,38 @@ class BaseScan(BaseModule):
             msg_hello.version.minor = ver_minor
             msg_hello.payload.payload.version.minor = ver_minor
             conn.send(msg_hello.encode())
-            data = conn.recv(4096)
-            (record, data) = RecordSSLv3.decode(data)
-            if isinstance(record.payload.payload, ServerHello):
-                server_hello = record.payload.payload
-                detected_ciphers.append(server_hello.cipher_suite)
-                cipher_suites.remove(server_hello.cipher_suite)
-            else:
+
+            time_start = datetime.now()
+            server_hello = None
+            data = b""
+            while server_hello is None:
+                tmp_time = datetime.now() - time_start
+                if tmp_time.total_seconds() > 5.0:
+                    raise Timeout()
+
+                tmp_data = conn.recv(4096)
+                if len(tmp_data) == 0:
+                    break
+
+                data += tmp_data
+
+                while True:
+                    try:
+                        (record, data) = RecordSSLv3.decode(data)
+                    except NotEnoughData:
+                        break
+
+                    if isinstance(record.payload.payload, ServerHello):
+                        server_hello = record.payload.payload
+
+            conn.close()
+            if server_hello is None:
                 break
 
+            detected_ciphers.append(server_hello.cipher_suite)
+            cipher_suites.remove(server_hello.cipher_suite)
             count = count + 1
             if limit != False and limit <= count:
                 break
-
-            conn.close()
 
         return detected_ciphers
