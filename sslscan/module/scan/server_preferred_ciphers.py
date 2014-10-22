@@ -1,6 +1,7 @@
 import flextls
 
 from sslscan import modules
+from sslscan.exception import Timeout
 from sslscan.kb import CipherResult
 from sslscan.module.scan import BaseScan
 
@@ -24,9 +25,15 @@ class ServerPreferredCiphers(BaseScan):
                 continue
             else:
                 cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
-                tmp1 = self._scan_cipher_suites_tls(protocol_version, cipher_suites, limit=2)
+                try:
+                    tmp1 = self._scan_cipher_suites_tls(protocol_version, cipher_suites, limit=2)
+                except Timeout:
+                    continue
                 cipher_suites.reverse()
-                tmp2 = self._scan_cipher_suites_tls(protocol_version, cipher_suites, limit=1)
+                try:
+                    tmp2 = self._scan_cipher_suites_tls(protocol_version, cipher_suites, limit=1)
+                except Timeout:
+                    continue
 
                 if len(tmp1) == 0:
                     kb.append(
