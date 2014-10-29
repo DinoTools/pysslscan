@@ -36,6 +36,7 @@ class BaseScan(BaseModule):
 
         hash_algorithms = flextls.registry.tls.hash_algorithms.get_ids()
         sign_algorithms = flextls.registry.tls.signature_algorithms.get_ids()
+        comp_methods = flextls.registry.tls.compression_methods.get_ids()
         while True:
             conn = self._scanner.handler.connect()
             conn.settimeout(2.0)
@@ -47,10 +48,11 @@ class BaseScan(BaseModule):
                 cipher.value = i
                 hello.cipher_suites.append(cipher)
 
-            comp = CompressionMethodField()
-            comp.value = 0
+            for comp_id in comp_methods:
+                comp = CompressionMethodField()
+                comp.value = comp_id
+                hello.compression_methods.append(comp)
 
-            hello.compression_methods.append(comp)
             ext_elliptic_curves = EllipticCurves()
             a = ext_elliptic_curves.get_field("elliptic_curve_list")
             for i in flextls.registry.ec.named_curves.get_ids():
@@ -110,6 +112,13 @@ class BaseScan(BaseModule):
             conn.close()
             if server_hello is None:
                 break
+
+            # get compression method
+            if kb.get("server.session.compression") is None:
+                comp_method = flextls.registry.tls.compression_methods.get(
+                    server_hello.compression_method
+                )
+                kb.set("server.session.compression", comp_method)
 
             detected_ciphers.append(server_hello.cipher_suite)
             cipher_suites.remove(server_hello.cipher_suite)
