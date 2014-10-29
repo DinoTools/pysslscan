@@ -4,10 +4,13 @@ import flextls
 from flextls.exception import NotEnoughData
 from flextls.field import CipherSuiteField, CompressionMethodField
 from flextls.field import SSLv2CipherSuiteField
+from flextls.field import ServerNameField, HostNameField
 from flextls.protocol.handshake import ClientHello, Handshake, ServerHello, ServerCertificate
 from flextls.protocol.handshake import SSLv2ClientHello, SSLv2ServerHello
 from flextls.protocol.handshake.extension import EllipticCurves, SignatureAlgorithms, Extension, SessionTicketTLS
+from flextls.protocol.handshake.extension import ServerNameIndication
 from flextls.protocol.record import RecordSSLv2, RecordSSLv3
+from flextls.protocol.alert import Alert
 
 from sslscan.exception import Timeout
 from sslscan.module import BaseModule
@@ -53,6 +56,14 @@ class BaseScan(BaseModule):
                 comp.value = comp_id
                 hello.compression_methods.append(comp)
 
+            server_name = ServerNameField()
+            server_name.payload = HostNameField("")
+            server_name.payload.value = self._scanner.handler.hostname.encode("utf-8")
+            tmp_sni = ServerNameIndication()
+            tmp_sni.server_name_list.append(server_name)
+            tmp_ext_sni = Extension() + tmp_sni
+            hello.extensions.append(tmp_ext_sni)
+
             ext_elliptic_curves = EllipticCurves()
             a = ext_elliptic_curves.get_field("elliptic_curve_list")
             for i in flextls.registry.ec.named_curves.get_ids():
@@ -88,7 +99,7 @@ class BaseScan(BaseModule):
             while server_hello is None or raw_certs is None:
                 tmp_time = datetime.now() - time_start
                 if tmp_time.total_seconds() > 5.0:
-                    raise Timeout()
+                    return detected_ciphers
 
                 tmp_data = conn.recv(4096)
 
@@ -108,6 +119,9 @@ class BaseScan(BaseModule):
                             for raw_cert in record.payload.payload.certificate_list:
                                 raw_certs.append(raw_cert.value)
                             kb.set("server.certificate.raw", raw_certs)
+                    elif isinstance(record.payload, Alert):
+                        if record.payload.level == 2:
+                            return detected_ciphers
 
             conn.close()
             if server_hello is None:
