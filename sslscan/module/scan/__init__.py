@@ -4,7 +4,7 @@ import flextls
 from flextls.exception import NotEnoughData
 from flextls.field import CipherSuiteField, CompressionMethodField
 from flextls.field import SSLv2CipherSuiteField
-from flextls.protocol.handshake import ClientHello, Handshake, ServerHello
+from flextls.protocol.handshake import ClientHello, Handshake, ServerHello, ServerCertificate
 from flextls.protocol.handshake import SSLv2ClientHello, SSLv2ServerHello
 from flextls.protocol.handshake.extension import EllipticCurves, SignatureAlgorithms, Extension, SessionTicketTLS
 from flextls.protocol.record import RecordSSLv2, RecordSSLv3
@@ -17,6 +17,7 @@ class BaseScan(BaseModule):
         BaseModule.__init__(self, **kwargs)
 
     def _scan_cipher_suites_tls(self, protocol_version, cipher_suites, limit=False):
+        kb = self._scanner.get_knowledge_base()
 
         ver_major = 3
         if protocol_version == flextls.registry.version.SSLv3:
@@ -37,6 +38,7 @@ class BaseScan(BaseModule):
         sign_algorithms = flextls.registry.tls.signature_algorithms.get_ids()
         while True:
             conn = self._scanner.handler.connect()
+            conn.settimeout(2.0)
 
             hello = ClientHello()
 
@@ -80,25 +82,30 @@ class BaseScan(BaseModule):
             time_start = datetime.now()
             server_hello = None
             data = b""
-            while server_hello is None:
+            raw_certs = kb.get("server.certificate.raw")
+            while server_hello is None or raw_certs is None:
                 tmp_time = datetime.now() - time_start
                 if tmp_time.total_seconds() > 5.0:
                     raise Timeout()
 
                 tmp_data = conn.recv(4096)
-                if len(tmp_data) == 0:
-                    break
 
                 data += tmp_data
-
                 while True:
                     try:
                         (record, data) = RecordSSLv3.decode(data)
                     except NotEnoughData:
                         break
 
-                    if isinstance(record.payload.payload, ServerHello):
-                        server_hello = record.payload.payload
+                    if isinstance(record.payload, Handshake):
+                        if isinstance(record.payload.payload, ServerHello):
+                            server_hello = record.payload.payload
+
+                        if raw_certs is None and isinstance(record.payload.payload, ServerCertificate):
+                            raw_certs = []
+                            for raw_cert in record.payload.payload.certificate_list:
+                                raw_certs.append(raw_cert.value)
+                            kb.set("server.certificate.raw", raw_certs)
 
             conn.close()
             if server_hello is None:
