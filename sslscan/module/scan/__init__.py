@@ -12,7 +12,6 @@ from flextls.protocol.handshake.extension import ServerNameIndication
 from flextls.protocol.record import RecordSSLv2, RecordSSLv3
 from flextls.protocol.alert import Alert
 
-from sslscan.exception import Timeout
 from sslscan.module import BaseModule
 
 class BaseScan(BaseModule):
@@ -134,7 +133,7 @@ class BaseScan(BaseModule):
         conn.close()
         return detected_ciphers
 
-    def _scan_cipher_suites_tls(self, protocol_version, cipher_suites, limit=False):
+    def _scan_tls_cipher_suites(self, protocol_version, cipher_suites, limit=False):
         kb = self._scanner.get_knowledge_base()
 
         cipher_suites = cipher_suites[:]

@@ -55,7 +55,7 @@ class ServerCiphers(BaseScan):
                 cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
                 detected_ciphers = []
                 try:
-                    detected_ciphers = self._scan_cipher_suites_tls(
+                    detected_ciphers = self._scan_tls_cipher_suites(
                         protocol_version,
                         cipher_suites
                     )

@@ -28,7 +28,7 @@ class ServerCertificate(BaseScan):
                 else:
                     cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
                     try:
-                        self._scan_cipher_suites_tls(
+                        self._scan_tls_cipher_suites(
                             protocol_version,
                             cipher_suites,
                             limit=1
