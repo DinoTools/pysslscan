@@ -79,7 +79,7 @@ class VulnerabilityHeartbleed(BaseScan):
 
                 elif isinstance(record.payload, Alert):
                     if record.payload.level == 2:
-                        return False
+                        return None
 
         # ToDo: use connection state
         if protocol_version == flextls.registry.version.SSLv3:
