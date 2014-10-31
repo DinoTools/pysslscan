@@ -19,8 +19,7 @@ class BaseScan(BaseModule):
     def __init__(self, **kwargs):
         BaseModule.__init__(self, **kwargs)
 
-    def _scan_cipher_suites_tls(self, protocol_version, cipher_suites, limit=False):
-        kb = self._scanner.get_knowledge_base()
+    def _build_tls_base_client_hello(self, protocol_version, cipher_suites):
 
         ver_major = 3
         if protocol_version == flextls.registry.version.SSLv3:
@@ -32,65 +31,77 @@ class BaseScan(BaseModule):
         elif protocol_version == flextls.registry.version.TLSv12:
             ver_minor = 3
 
+        hash_algorithms = flextls.registry.tls.hash_algorithms.get_ids()
+        sign_algorithms = flextls.registry.tls.signature_algorithms.get_ids()
+        comp_methods = flextls.registry.tls.compression_methods.get_ids()
+
+        hello = ClientHello()
+
+        for i in cipher_suites:
+            cipher = CipherSuiteField()
+            cipher.value = i
+            hello.cipher_suites.append(cipher)
+
+        for comp_id in comp_methods:
+            comp = CompressionMethodField()
+            comp.value = comp_id
+            hello.compression_methods.append(comp)
+
+        server_name = ServerNameField()
+        server_name.payload = HostNameField("")
+        server_name.payload.value = self._scanner.handler.hostname.encode("utf-8")
+        tmp_sni = ServerNameIndication()
+        tmp_sni.server_name_list.append(server_name)
+        tmp_ext_sni = Extension() + tmp_sni
+        #hello.extensions.append(tmp_ext_sni)
+
+        ext_elliptic_curves = EllipticCurves()
+        a = ext_elliptic_curves.get_field("elliptic_curve_list")
+        for i in flextls.registry.ec.named_curves.get_ids():
+            v = a.item_class("unnamed", None)
+            v.value = i
+            a.value.append(v)
+
+        hello.extensions.append(Extension() + ext_elliptic_curves)
+
+        ext_signature_algorithm = SignatureAlgorithms()
+        a = ext_signature_algorithm.get_field("supported_signature_algorithms")
+        for i in hash_algorithms:
+            for j in sign_algorithms:
+                v = a.item_class("unnamed")
+                v.hash = i
+                v.signature = j
+                a.value.append(v)
+
+        hello.extensions.append(Extension() + ext_signature_algorithm)
+
+        hello.extensions.append(Extension() + SessionTicketTLS())
+
+        msg_hello = RecordSSLv3() + (Handshake() + hello)
+        msg_hello.payload.payload.random.random_bytes = b"A"*32
+        msg_hello.version.minor = ver_minor
+        msg_hello.payload.payload.version.minor = ver_minor
+        return msg_hello
+
+
+    def _scan_cipher_suites_tls(self, protocol_version, cipher_suites, limit=False):
+        kb = self._scanner.get_knowledge_base()
+
         cipher_suites = cipher_suites[:]
 
         detected_ciphers = []
         count = 0
 
-        hash_algorithms = flextls.registry.tls.hash_algorithms.get_ids()
-        sign_algorithms = flextls.registry.tls.signature_algorithms.get_ids()
-        comp_methods = flextls.registry.tls.compression_methods.get_ids()
         while True:
             conn = self._scanner.handler.connect()
             conn.settimeout(2.0)
 
-            hello = ClientHello()
+            record_tls = self._build_tls_base_client_hello(
+                protocol_version,
+                cipher_suites
+            )
 
-            for i in cipher_suites:
-                cipher = CipherSuiteField()
-                cipher.value = i
-                hello.cipher_suites.append(cipher)
-
-            for comp_id in comp_methods:
-                comp = CompressionMethodField()
-                comp.value = comp_id
-                hello.compression_methods.append(comp)
-
-            server_name = ServerNameField()
-            server_name.payload = HostNameField("")
-            server_name.payload.value = self._scanner.handler.hostname.encode("utf-8")
-            tmp_sni = ServerNameIndication()
-            tmp_sni.server_name_list.append(server_name)
-            tmp_ext_sni = Extension() + tmp_sni
-            hello.extensions.append(tmp_ext_sni)
-
-            ext_elliptic_curves = EllipticCurves()
-            a = ext_elliptic_curves.get_field("elliptic_curve_list")
-            for i in flextls.registry.ec.named_curves.get_ids():
-                v = a.item_class("unnamed", None)
-                v.value = i
-                a.value.append(v)
-
-            hello.extensions.append(Extension() + ext_elliptic_curves)
-
-            ext_signature_algorithm = SignatureAlgorithms()
-            a = ext_signature_algorithm.get_field("supported_signature_algorithms")
-            for i in hash_algorithms:
-                for j in sign_algorithms:
-                    v = a.item_class("unnamed")
-                    v.hash = i
-                    v.signature = j
-                    a.value.append(v)
-
-            hello.extensions.append(Extension() + ext_signature_algorithm)
-
-            hello.extensions.append(Extension() + SessionTicketTLS())
-
-            msg_hello = RecordSSLv3() + (Handshake() + hello)
-            msg_hello.payload.payload.random.random_bytes = b"A"*32
-            msg_hello.version.minor = ver_minor
-            msg_hello.payload.payload.version.minor = ver_minor
-            conn.send(msg_hello.encode())
+            conn.send(record_tls.encode())
 
             time_start = datetime.now()
             server_hello = None
