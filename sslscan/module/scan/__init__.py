@@ -53,7 +53,7 @@ class BaseScan(BaseModule):
         tmp_sni = ServerNameIndication()
         tmp_sni.server_name_list.append(server_name)
         tmp_ext_sni = Extension() + tmp_sni
-        #hello.extensions.append(tmp_ext_sni)
+        hello.extensions.append(tmp_ext_sni)
 
         ext_elliptic_curves = EllipticCurves()
         a = ext_elliptic_curves.get_field("elliptic_curve_list")
