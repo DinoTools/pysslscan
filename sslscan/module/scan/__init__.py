@@ -103,13 +103,18 @@ class BaseScan(BaseModule):
         conn.send(msg_hello.encode())
 
         time_start = datetime.now()
+        detected_ciphers = []
         data = b""
         while True:
             tmp_time = datetime.now() - time_start
             if tmp_time.total_seconds() > 5.0:
                 raise Timeout()
 
-            tmp_data = conn.recv(4096)
+            try:
+                tmp_data = conn.recv(4096)
+            except ConnectionError:
+                return detected_ciphers
+
             if len(tmp_data) == 0:
                 raise Timeout()
 
@@ -122,16 +127,12 @@ class BaseScan(BaseModule):
 
             if isinstance(record.payload, SSLv2ServerHello):
                 for i in record.payload.cipher_suites:
-                    cipher_suite = flextls.registry.sslv2.cipher_suites.get(i.value)
-                    kb.append(
-                        'server.ciphers',
-                        CipherResult(
-                            protocol_version=protocol_version,
-                            cipher_suite=cipher_suite,
-                            status=1,
-                        )
-                    )
+                    detected_ciphers.append(i.value)
+
                 break
+
+        conn.close()
+        return detected_ciphers
 
     def _scan_cipher_suites_tls(self, protocol_version, cipher_suites, limit=False):
         kb = self._scanner.get_knowledge_base()
