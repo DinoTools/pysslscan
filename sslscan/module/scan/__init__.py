@@ -11,8 +11,13 @@ from flextls.protocol.handshake.extension import EllipticCurves, SignatureAlgori
 from flextls.protocol.handshake.extension import ServerNameIndication
 from flextls.protocol.record import RecordSSLv2, RecordSSLv3
 from flextls.protocol.alert import Alert
+import six
 
 from sslscan.module import BaseModule
+
+if six.PY2:
+    import socket
+    ConnectionError = socket.error
 
 
 class BaseScan(BaseModule):
@@ -106,15 +111,12 @@ class BaseScan(BaseModule):
         while True:
             tmp_time = datetime.now() - time_start
             if tmp_time.total_seconds() > 5.0:
-                raise Timeout()
+                return detected_ciphers
 
             try:
                 tmp_data = conn.recv(4096)
             except ConnectionError:
                 return detected_ciphers
-
-            if len(tmp_data) == 0:
-                raise Timeout()
 
             data += tmp_data
 
