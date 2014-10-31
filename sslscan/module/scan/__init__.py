@@ -83,6 +83,55 @@ class BaseScan(BaseModule):
         msg_hello.payload.payload.version.minor = ver_minor
         return msg_hello
 
+    def _scan_ssl2_cipher_suites(self, protocol_version, cipher_suites):
+        kb = self._scanner.get_knowledge_base()
+
+        conn = self._scanner.handler.connect()
+
+        hello = SSLv2ClientHello()
+        hello.version.major = 0
+        hello.version.minor = 2
+        hello.challenge = b"A"*16
+
+        for i in cipher_suites:
+            cipher = SSLv2CipherSuiteField()
+            cipher.value = i
+            hello.cipher_suites.append(cipher)
+
+        msg_hello = RecordSSLv2() + hello
+
+        conn.send(msg_hello.encode())
+
+        time_start = datetime.now()
+        data = b""
+        while True:
+            tmp_time = datetime.now() - time_start
+            if tmp_time.total_seconds() > 5.0:
+                raise Timeout()
+
+            tmp_data = conn.recv(4096)
+            if len(tmp_data) == 0:
+                raise Timeout()
+
+            data += tmp_data
+
+            try:
+                (record, data) = RecordSSLv2.decode(data)
+            except NotEnoughData:
+                continue
+
+            if isinstance(record.payload, SSLv2ServerHello):
+                for i in record.payload.cipher_suites:
+                    cipher_suite = flextls.registry.sslv2.cipher_suites.get(i.value)
+                    kb.append(
+                        'server.ciphers',
+                        CipherResult(
+                            protocol_version=protocol_version,
+                            cipher_suite=cipher_suite,
+                            status=1,
+                        )
+                    )
+                break
 
     def _scan_cipher_suites_tls(self, protocol_version, cipher_suites, limit=False):
         kb = self._scanner.get_knowledge_base()
