@@ -14,6 +14,7 @@ from flextls.protocol.alert import Alert
 
 from sslscan.module import BaseModule
 
+
 class BaseScan(BaseModule):
     def __init__(self, **kwargs):
         BaseModule.__init__(self, **kwargs)
@@ -83,8 +84,6 @@ class BaseScan(BaseModule):
         return msg_hello
 
     def _scan_ssl2_cipher_suites(self, protocol_version, cipher_suites):
-        kb = self._scanner.get_knowledge_base()
-
         conn = self._scanner.handler.connect()
 
         hello = SSLv2ClientHello()
@@ -197,7 +196,7 @@ class BaseScan(BaseModule):
             detected_ciphers.append(server_hello.cipher_suite)
             cipher_suites.remove(server_hello.cipher_suite)
             count = count + 1
-            if limit != False and limit <= count:
+            if limit is not False and limit <= count:
                 break
 
         return detected_ciphers
