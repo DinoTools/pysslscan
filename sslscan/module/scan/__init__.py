@@ -162,7 +162,10 @@ class BaseScan(BaseModule):
                 if tmp_time.total_seconds() > 5.0:
                     return detected_ciphers
 
-                tmp_data = conn.recv(4096)
+                try:
+                    tmp_data = conn.recv(4096)
+                except ConnectionError:
+                    return detected_ciphers
 
                 data += tmp_data
                 while True:
