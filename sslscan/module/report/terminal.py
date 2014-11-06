@@ -353,10 +353,12 @@ class Terminal(BaseReport):
         )
         if compression is not None:
             if not compression:
-                compression = "None"
+                compression_name = "None"
+            else:
+                compression_name = compression.name
             print(
                 "  Compression: {1}{0}{2}".format(
-                    compression,
+                    compression_name,
                     helper.rating2color(self.color, rating_compression),
                     self.color.RESET
                 )
