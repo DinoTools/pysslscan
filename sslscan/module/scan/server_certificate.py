@@ -1,4 +1,10 @@
-from OpenSSL import crypto
+openssl_enabled = False
+try:
+    from OpenSSL import crypto
+    openssl_enabled = True
+except:
+    pass
+
 
 import flextls
 
@@ -60,4 +66,5 @@ class ServerCertificate(BaseScan):
         kb.set("server.certificate_chain", cert_chain)
 
 
-modules.register(ServerCertificate)
+if openssl_enabled is True:
+    modules.register(ServerCertificate)
