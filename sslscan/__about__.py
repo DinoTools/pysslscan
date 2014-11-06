@@ -13,7 +13,7 @@ __title__ = "sslscan"
 __summary__ = "Framework and command-line tool to scan SSL enabled services"
 __uri__ = "https://github.com/DinoTools/pysslscan"
 
-__version__ = "0.3.1"
+__version__ = "0.4.dev1"
 
 __author__ = "PhiBo (DinoTools)"
 __email__ = ""
