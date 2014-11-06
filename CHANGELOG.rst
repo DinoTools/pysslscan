@@ -6,6 +6,15 @@ Changelog
 
 .. note:: This version is not yet released and is under active development.
 
+* Use flextls module for scans
+  * Most scans have been rewritten to be more flexible
+  * Support additional ciphers
+  * Minimize OpenSSL dependencies
+* New server.compression scan to explicitly scan for supported compression methods
+* Minimize number of requests during cipher scans
+* Improve detection of preferred ciphers
+* Don't perform a full handshake during cipher scans
+
 0.3.1 - 2014-10-20
 ~~~~~~~~~~~~~~~~~~
 
