@@ -13,6 +13,14 @@ from flextls.protocol.record import RecordSSLv2, RecordSSLv3
 from flextls.protocol.alert import Alert
 import six
 
+openssl_enabled = False
+try:
+    from OpenSSL import SSL, _util
+    openssl_enabled = True
+except:
+    pass
+
+
 from sslscan.module import BaseModule
 
 if six.PY2:
@@ -205,3 +213,99 @@ class BaseScan(BaseModule):
                 break
 
         return detected_ciphers
+
+
+class BaseInfoScan(BaseScan):
+    def __init__(self, **kwargs):
+        BaseScan.__init__(self, **kwargs)
+
+    def _get_server_info(self):
+        server_info = self._scanner.handler.get_server_info()
+
+        if server_info is not None:
+            return server_info
+
+        conn_ssl = self._connect_auto()
+        if conn_ssl is None:
+            return None
+
+        server_info = self._scanner.handler.get_server_info(conn_ssl)
+        conn_ssl.close()
+        if server_info is not None:
+            return server_info
+
+        return None
+
+    def _connect_auto(self):
+        conn_ssl = self._connect_openssl()
+        if conn_ssl is not None:
+            return conn_ssl
+
+        conn_ssl = self._connect_internal_ssl()
+        if conn_ssl is not None:
+            return conn_ssl
+
+        return None
+
+    def _connect_internal_ssl(self, protocol_verions=None):
+        import ssl
+        from sslscan._helper.int_ssl import convert_versions2methods
+
+        if protocol_verions is None:
+            protocol_versions = self._scanner.get_enabled_versions()
+
+        methods = convert_versions2methods(protocol_versions)
+        methods.reverse()
+
+        for method in methods:
+            try:
+                ctx = ssl.SSLContext(method)
+            except:
+                # ToDo:
+                continue
+
+            ctx.set_ciphers("ALL:COMPLEMENT")
+            ctx.verify_mode = ssl.VERIFY_DEFAULT
+            conn = self._scanner.handler.connect()
+            conn_ssl = ctx.wrap_socket(
+                conn,
+                server_hostname=self._scanner.handler.hostname.encode("utf-8")
+            )
+            return conn_ssl
+
+        return None
+
+    def _connect_openssl(self, protocol_verions=None):
+        if openssl_enabled == False:
+            return None
+        from sslscan._helper.openssl import convert_versions2methods
+
+        if protocol_verions is None:
+            protocol_versions = self._scanner.get_enabled_versions()
+
+        methods = convert_versions2methods(protocol_versions)
+        methods.reverse()
+
+        for method in methods:
+            try:
+                ctx = SSL.Context(method)
+            except:
+                # ToDo:
+                continue
+
+            ctx.set_cipher_list("ALL:COMPLEMENT")
+            conn = self._scanner.handler.connect()
+            conn_ssl = SSL.Connection(ctx, conn)
+            conn_ssl.set_tlsext_host_name(
+                self._scanner.handler.hostname.encode("utf-8")
+            )
+            conn_ssl.set_connect_state()
+            try:
+                conn_ssl.do_handshake()
+            except Exception as e:
+                print(e)
+                conn_ssl.close()
+                continue
+            return conn_ssl
+
+        return None
