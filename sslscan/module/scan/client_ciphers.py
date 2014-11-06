@@ -1,7 +1,9 @@
-from OpenSSL import SSL, _util
+# ToDo: This module has been disabled
+# Should we list ciphers from the flextls registry instead?
+# from OpenSSL import SSL, _util
 
 from sslscan import modules
-from sslscan.kb import Cipher
+# from sslscan.kb import Cipher
 from sslscan.module.scan import BaseScan
 
 
@@ -43,4 +45,4 @@ class ClientCiphers(BaseScan):
                 )
 
 
-modules.register(ClientCiphers)
+# modules.register(ClientCiphers)

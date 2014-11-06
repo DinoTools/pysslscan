@@ -1,6 +1,15 @@
-from OpenSSL import SSL, _util
+openssl_enabled = False
+try:
+    from OpenSSL import crypto
+    openssl_enabled = True
+except:
+    pass
+
+
+import flextls
 
 from sslscan import modules
+from sslscan.exception import Timeout
 from sslscan.module.scan import BaseScan
 
 
@@ -15,51 +24,47 @@ class ServerCertificate(BaseScan):
         BaseScan.__init__(self, **kwargs)
 
     def run(self):
-        methods = self._scanner.get_enabled_methods()
-        methods.reverse()
-        for method in methods:
-            try:
-                ctx = SSL.Context(method)
-            except:
-                # ToDo:
-                continue
+        kb = self._scanner.get_knowledge_base()
 
-            ctx.set_cipher_list("ALL:COMPLEMENT")
-            conn = self._scanner.handler.connect()
-            conn_ssl = SSL.Connection(ctx, conn)
-            conn_ssl.set_tlsext_host_name(
-                self._scanner.handler.hostname.encode("utf-8")
-            )
-            conn_ssl.set_connect_state()
-            try:
-                conn_ssl.do_handshake()
-            except Exception as e:
-                print(e)
-                conn_ssl.close()
-                continue
+        raw_certs = kb.get("server.certificate.raw")
+        if raw_certs is None:
+            for protocol_version in self._scanner.get_enabled_versions():
+                if protocol_version == flextls.registry.version.SSLv2:
+                    continue
+                else:
+                    cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
+                    try:
+                        self._scan_tls_cipher_suites(
+                            protocol_version,
+                            cipher_suites,
+                            limit=1
+                        )
+                    except Timeout:
+                        continue
 
-            cert = conn_ssl.get_peer_certificate()
-            kb = self._scanner.get_knowledge_base()
-            kb.set("server.certificate", cert)
+                raw_certs = kb.get("server.certificate.raw")
+                if raw_certs is not None:
+                    break
 
-            cert_chain = conn_ssl.get_peer_cert_chain()
-            kb.set("server.certificate_chain", cert_chain)
-
-            compression_ssl = _util.lib.SSL_get_current_compression(conn_ssl._ssl)
-            compression = _util.lib.SSL_COMP_get_name(compression_ssl)
-            if compression == _util.ffi.NULL:
-                kb.set("server.session.compression", False)
-            else:
-                kb.set("server.session.compression", _util.ffi.string(compression))
-
-            expansion_ssl = _util.lib.SSL_get_current_expansion(conn_ssl._ssl)
-            expansion = _util.lib.SSL_COMP_get_name(expansion_ssl)
-            if expansion == _util.ffi.NULL:
-                kb.set("server.session.expansion", False)
-            else:
-                kb.set("server.session.expansion", _util.ffi.string(compression))
-
+        if type(raw_certs) != list:
             return
 
+        cert_chain = []
 
-modules.register(ServerCertificate)
+        for raw_cert in raw_certs:
+            try:
+                cert = crypto.load_certificate(
+                    crypto.FILETYPE_ASN1,
+                    raw_cert
+                )
+                cert_chain.append(cert)
+            except:
+                continue
+
+        if len(cert_chain) > 0:
+            kb.set("server.certificate", cert_chain[0])
+        kb.set("server.certificate_chain", cert_chain)
+
+
+if openssl_enabled is True:
+    modules.register(ServerCertificate)

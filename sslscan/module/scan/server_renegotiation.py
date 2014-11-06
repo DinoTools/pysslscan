@@ -1,4 +1,10 @@
-from OpenSSL import SSL, _util
+openssl_enabled = False
+try:
+    from OpenSSL import SSL, _util
+    from sslscan._helper.openssl import convert_versions2methods
+    openssl_enabled = True
+except:
+    pass
 
 from sslscan import modules
 from sslscan.module.scan import BaseScan
@@ -17,8 +23,11 @@ class ServerRenegotiation(BaseScan):
     def run(self):
         kb = self._scanner.get_knowledge_base()
 
-        methods = self._scanner.get_enabled_methods()
+        protocol_versions = self._scanner.get_enabled_versions()
+
+        methods = convert_versions2methods(protocol_versions)
         methods.reverse()
+
         for method in methods:
             try:
                 ctx = SSL.Context(method)
@@ -56,4 +65,5 @@ class ServerRenegotiation(BaseScan):
             conn_ssl.close()
 
 
-modules.register(ServerRenegotiation)
+if openssl_enabled is True:
+    modules.register(ServerRenegotiation)

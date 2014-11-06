@@ -14,11 +14,26 @@ Features
 --------
 
 * Query SSL services
-* Supported cryptographic protocols: SSLv2, SSLv3, TLS 1.0, TLS 1.1 and TLS 1.2 (depends on used OpenSSL library)
-* Supported Protocols like TCP, HTTP, SMTP, ...
+* Supported cryptographic protocols: SSLv2, SSLv3, TLS 1.0, TLS 1.1 and TLS 1.2
+* Supported Protocols: TCP, HTTP, IMAP, POP3 and SMTP
 * IPv4 and IPv6
+* Scan modules:
+
+  * Supported ciphers
+  * Ciphers preferred
+  * Supported compression methods
+  * Server certificate (requires pyOpenSSL)
+  * Test renegotiation (requires pyOpenSSL)
+  * Detect vulnerabilities
+
+    * Heartbleed
+
+  * Extract server information: HTTP, IMAP, POP3 and SMTP
+
 * Rule based result highlighting
-* Output formats: text/terminal
+* Output formats:
+
+  * text/terminal
 
 
 Install
@@ -29,9 +44,13 @@ Requirements:
 * Python 2.7 or Python >= 3.2
 * Python packages:
 
+  * flextls >= 0.2
+  * six >= 1.4.1
+
+* Python packages(optional):
+
   * cryptography >= 0.5
   * pyOpenSSL >= 0.14
-  * six >= 1.4.1
 
 Install:
 

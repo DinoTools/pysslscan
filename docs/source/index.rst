@@ -1,6 +1,32 @@
 Welcome to pySSLScan's documentation!
 =====================================
 
+Features
+--------
+
+* Query SSL services
+* Supported cryptographic protocols: SSLv2, SSLv3, TLS 1.0, TLS 1.1 and TLS 1.2
+* Supported Protocols: TCP, HTTP, IMAP, POP3 and SMTP
+* IPv4 and IPv6
+* Scan modules:
+
+  * Supported ciphers
+  * Ciphers preferred
+  * Supported compression methods
+  * Server certificate (requires pyOpenSSL)
+  * Test renegotiation (requires pyOpenSSL)
+  * Detect vulnerabilities
+
+    * Heartbleed
+
+  * Extract server information: HTTP, IMAP, POP3 and SMTP
+
+* Rule based result highlighting
+* Output formats:
+
+  * text/terminal
+
+
 Installation
 ------------
 

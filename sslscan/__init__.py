@@ -9,8 +9,7 @@ import six
 
 from six.moves.urllib.parse import urlparse, parse_qs
 
-from OpenSSL import SSL
-
+import flextls
 
 from sslscan.__about__ import (
     __author__, __copyright__, __email__, __license__, __summary__, __title__,
@@ -113,27 +112,28 @@ class Scanner(object):
         module.config.set_values(config)
         self.append(module)
 
-    def get_enabled_methods(self):
+    def get_enabled_versions(self):
         """
         Uses the scanner config to create and return a list of all enabled
-        SSL methods.
+        SSL/TLS protocol versions.
 
         :return: List of methods
         :rtype: List
         """
 
-        methods = []
+        versions = []
         if self.config.get_value('ssl2'):
-            methods.append(SSL.SSLv2_METHOD)
+            versions.append(flextls.registry.version.SSLv2)
         if self.config.get_value('ssl3'):
-            methods.append(SSL.SSLv3_METHOD)
+            versions.append(flextls.registry.version.SSLv3)
         if self.config.get_value('tls10'):
-            methods.append(SSL.TLSv1_METHOD)
+            versions.append(flextls.registry.version.TLSv10)
         if self.config.get_value('tls11'):
-            methods.append(SSL.TLSv1_1_METHOD)
+            versions.append(flextls.registry.version.TLSv11)
         if self.config.get_value('tls12'):
-            methods.append(SSL.TLSv1_2_METHOD)
-        return methods
+            versions.append(flextls.registry.version.TLSv12)
+
+        return versions
 
     def get_knowledge_base(self):
         """Return the knowledge base used by this scanner."""
