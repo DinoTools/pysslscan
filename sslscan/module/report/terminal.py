@@ -384,6 +384,12 @@ class Terminal(BaseReport):
 
     def run(self):
         kb = self._scanner.get_knowledge_base()
+        handler = self._scanner.get_handler()
+
+        print("")
+        print(handler.hostname)
+        print("="*len(handler.hostname))
+        print("")
 
         self._rating = self._scanner.load_rating(self.config.get_value("rating"))
 
