@@ -135,6 +135,16 @@ class Scanner(object):
 
         return versions
 
+    def get_handler(self):
+        """
+        Get the active protocol handler.
+
+        :return: Instance of the handler
+        :rtype: sslscan.module.handler.BaseHandler
+        """
+
+        return self.handler
+
     def get_knowledge_base(self):
         """Return the knowledge base used by this scanner."""
 
