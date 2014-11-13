@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 
 import flextls
 from flextls.exception import NotEnoughData
@@ -91,7 +92,7 @@ class BaseScan(BaseModule):
         hello.extensions.append(Extension() + SessionTicketTLS())
 
         msg_hello = RecordSSLv3() + (Handshake() + hello)
-        msg_hello.payload.payload.random.random_bytes = b"A"*32
+        msg_hello.payload.payload.random.random_bytes = os.urandom(32)
         msg_hello.version.minor = ver_minor
         msg_hello.payload.payload.version.minor = ver_minor
         return msg_hello
