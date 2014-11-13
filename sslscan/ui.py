@@ -211,6 +211,7 @@ def run_scan(args):
     for host_uri in args.host_uris:
         module = scanner.load_handler_from_uri(host_uri)
         scanner.set_handler(module)
+        scanner.reset_knowledge_base()
         scanner.run()
 
     return 0

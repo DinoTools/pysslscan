@@ -186,6 +186,11 @@ class Scanner(object):
             return NoneRating()
         return module()
 
+    def reset_knowledge_base(self):
+        """Create and activate a new knowledge base for this scanner."""
+
+        self._kb = KnowledgeBase()
+
     def run(self):
         """Execute all scan and report modules attached to the scanner."""
         self.run_scans()
