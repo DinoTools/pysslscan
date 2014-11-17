@@ -1,10 +1,13 @@
 Changelog
 =========
 
-0.4 - `master`_
+0.5 - `master`_
 ~~~~~~~~~~~~~~~
 
 .. note:: This version is not yet released and is under active development.
+
+0.4 - 2014-11-17
+~~~~~~~~~~~~~~~~
 
 * Use flextls module for scans
   * Most scans have been rewritten to be more flexible
@@ -14,6 +17,7 @@ Changelog
 * Minimize number of requests during cipher scans
 * Improve detection of preferred ciphers
 * Don't perform a full handshake during cipher scans
+* Fixes (Thanks to Till Maas)
 
 0.3.1 - 2014-10-20
 ~~~~~~~~~~~~~~~~~~
