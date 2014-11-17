@@ -35,7 +35,7 @@ setup(
         "Programming Language :: Python :: 3.4",
     ],
     install_requires=[
-        "flextls > 0.1",
+        "flextls >= 0.2",
         "six >= 1.4.1"
     ],
     packages=find_packages(exclude=["*.tests", "*.tests.*"]),
