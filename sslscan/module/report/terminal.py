@@ -341,6 +341,35 @@ class Terminal(BaseReport):
             )
         print("")
 
+    def _print_server_security(self, kb):
+        if len(kb.get_list("server.security.")) == 0:
+            return
+
+        print("Security:")
+        scsv_supported = kb.get("server.security.scsv", "")
+        if scsv_supported != "":
+            rating_scsv = self._rating.rate(
+                "server.security.scsv",
+                scsv_supported
+            )
+            tmp_value = "-"
+            if scsv_supported is None:
+                tmp_value = "unkown"
+            elif scsv_supported is True:
+                tmp_value = "supported"
+            elif scsv_supported is False:
+                tmp_value= "not supported"
+
+            print(
+                "  Signaling Cipher Suite Value (SCSV): {1}{0}{2}".format(
+                    tmp_value,
+                    helper.rating2color(self.color, rating_scsv),
+                    self.color.RESET
+                )
+            )
+
+        print("")
+
     def _print_server_session(self, kb):
         if len(kb.get_list("server.session.")) == 0:
             return
@@ -400,6 +429,8 @@ class Terminal(BaseReport):
         self._print_server_preferred_ciphers(kb)
 
         self._print_server_certificate_chain(kb)
+
+        self._print_server_security(kb)
 
         self._print_server_session(kb)
 
