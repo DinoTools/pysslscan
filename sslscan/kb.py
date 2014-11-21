@@ -57,16 +57,18 @@ class KnowledgeBase(object):
 
         item.append(value)
 
-    def get(self, kb_id):
+    def get(self, kb_id, default=None):
         """
-        Fetch a value by its ID
+        Fetch a value by its ID from the knowledge base. If not found return
+        the default value.
 
-        :param String kb_id: The ID
-
-        :todo: Add default value
+        :param String kb_id: The knowledge base id
+        :param Mixed default: Default value, returned if kb_id not found
+        :return: Value or default
+        :rtype: Mixed
         """
 
-        return self._items.get(kb_id)
+        return self._items.get(kb_id, default)
 
     def get_list(self, kb_id):
         """
