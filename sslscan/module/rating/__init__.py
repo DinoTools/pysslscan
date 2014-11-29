@@ -1,3 +1,4 @@
+from sslscan.kb import KnowledgeBase
 from sslscan.module import BaseModule
 
 
@@ -13,11 +14,11 @@ class BaseRating(BaseModule):
     def get_rule(self, name):
         return self._rules.get(name)
 
-    def rate(self, rule_name, value):
+    def rate(self, rule_name, value, kb=None):
         rule = self.get_rule(rule_name)
         if rule is None:
             return None
-        return rule.rate(value)
+        return rule.rate(value, kb)
 
 
 class NoneRating(BaseRating):
@@ -36,10 +37,12 @@ class RatingRule(object):
         self._result_refs = result_refs
         self._rules = rules
 
-    def rate(self, value):
+    def rate(self, value, kb=None):
+        if kb is None:
+            kb = KnowledgeBase()
         result = None
         for rule in self._rules:
-            result = rule(value)
+            result = rule(value, kb)
             if result is not None:
                 break
         return RatingResult(result, self)

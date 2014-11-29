@@ -24,9 +24,9 @@ class RBSec(BaseRating):
             RatingRule(
                 "cipher.bits",
                 rules=[
-                    lambda bits: 1 if bits > 56 else None,
-                    lambda bits: 3 if bits > 40 else None,
-                    lambda bits: 5
+                    lambda v, kb: 1 if v > 56 else None,
+                    lambda v, kb: 3 if v > 40 else None,
+                    lambda v, kb: 5
                 ]
             )
         )
@@ -35,7 +35,7 @@ class RBSec(BaseRating):
             RatingRule(
                 "cipher.protocol_version",
                 rules=[
-                    lambda method: 6 if method == reg.version.SSLv2 else None,
+                    lambda v, kb: 6 if v == reg.version.SSLv2 else None,
                 ]
             )
         )
@@ -44,9 +44,9 @@ class RBSec(BaseRating):
             RatingRule(
                 "cipher.name",
                 rules=[
-                    lambda name: 5 if "EXP" in name else None,
-                    lambda name: 3 if "RC" in name else None,
-                    lambda name: 5 if "ADH" in name else None
+                    lambda v, kb: 5 if "EXP" in v else None,
+                    lambda v, kb: 3 if "RC" in v else None,
+                    lambda v, kb: 5 if "ADH" in v else None
                 ],
             )
         )
@@ -55,8 +55,8 @@ class RBSec(BaseRating):
             RatingRule(
                 "server.renegotiation.secure",
                 rules=[
-                    lambda status: 6 if status == False else None,
-                    lambda status: 1 if status == True else None
+                    lambda v, kb: 6 if v == False else None,
+                    lambda v, kb: 1 if v == True else None
                 ]
             )
         )

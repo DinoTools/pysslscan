@@ -22,10 +22,10 @@ class SSLLabs2009c(BaseRating):
             RatingRule(
                 "cipher.bits",
                 rules=[
-                    lambda bits: 6 if bits == 0 else None,
-                    lambda bits: 5 if bits < 128 else None,
-                    lambda bits: 2 if bits < 256 else None,
-                    lambda bits: 1 if bits >= 256 else None
+                    lambda v, kb: 6 if v == 0 else None,
+                    lambda v, kb: 5 if v < 128 else None,
+                    lambda v, kb: 2 if v < 256 else None,
+                    lambda v, kb: 1 if v >= 256 else None
                 ]
             )
         )
@@ -34,10 +34,10 @@ class SSLLabs2009c(BaseRating):
             RatingRule(
                 "cipher.bits",
                 rules=[
-                    lambda bits: 6 if bits == 0 else None,
-                    lambda bits: 5 if bits < 128 else None,
-                    lambda bits: 2 if bits < 256 else None,
-                    lambda bits: 1 if bits >= 256 else None
+                    lambda v, kb: 6 if v == 0 else None,
+                    lambda v, kb: 5 if v < 128 else None,
+                    lambda v, kb: 2 if v < 256 else None,
+                    lambda v, kb: 1 if v >= 256 else None
                 ]
             )
         )
@@ -46,8 +46,8 @@ class SSLLabs2009c(BaseRating):
             RatingRule(
                 "cipher.protocol_version",
                 rules=[
-                    lambda method: 6 if method == reg.version.SSLv2 else None,
-                    lambda method: 1 if method == reg.version.TLSv12 else None,
+                    lambda v, kb: 6 if v == reg.version.SSLv2 else None,
+                    lambda v, kb: 1 if v == reg.version.TLSv12 else None,
                 ]
             )
         )
@@ -56,8 +56,8 @@ class SSLLabs2009c(BaseRating):
             RatingRule(
                 "server.renegotiation.secure",
                 rules=[
-                    lambda status: 6 if status == False else None,
-                    lambda status: 1 if status == True else None
+                    lambda v, kb: 6 if v == False else None,
+                    lambda v, kb: 1 if v == True else None
                 ]
             )
         )
@@ -78,10 +78,10 @@ class SSLLabs2009d(BaseRating):
             RatingRule(
                 "cipher.bits",
                 rules=[
-                    lambda bits: 6 if bits == 0 else None,
-                    lambda bits: 5 if bits < 128 else None,
-                    lambda bits: 2 if bits < 256 else None,
-                    lambda bits: 1 if bits >= 256 else None
+                    lambda v, kb: 6 if v == 0 else None,
+                    lambda v, kb: 5 if v < 128 else None,
+                    lambda v, kb: 2 if v < 256 else None,
+                    lambda v, kb: 1 if v >= 256 else None
                 ]
             )
         )
@@ -90,8 +90,8 @@ class SSLLabs2009d(BaseRating):
             RatingRule(
                 "cipher.protocol_version",
                 rules=[
-                    lambda method: 6 if method == reg.version.SSLv2 else None,
-                    lambda method: 1 if method == reg.version.TLSv12 else None,
+                    lambda v, kb: 6 if v == reg.version.SSLv2 else None,
+                    lambda v, kb: 1 if v == reg.version.TLSv12 else None,
                 ]
             )
         )
@@ -100,8 +100,8 @@ class SSLLabs2009d(BaseRating):
             RatingRule(
                 "server.renegotiation.secure",
                 rules=[
-                    lambda status: 6 if status == False else None,
-                    lambda status: 1 if status == True else None
+                    lambda v, kb: 6 if v == False else None,
+                    lambda v, kb: 1 if v == True else None
                 ]
             )
         )
@@ -122,10 +122,10 @@ class SSLLabs2009e(BaseRating):
             RatingRule(
                 "cipher.bits",
                 rules=[
-                    lambda bits: 6 if bits == 0 else None,
-                    lambda bits: 5 if bits < 128 else None,
-                    lambda bits: 3 if bits < 256 else None,
-                    lambda bits: 0 if bits >= 256 else None
+                    lambda v, kb: 6 if v == 0 else None,
+                    lambda v, kb: 5 if v < 128 else None,
+                    lambda v, kb: 3 if v < 256 else None,
+                    lambda v, kb: 0 if v >= 256 else None
                 ]
             )
         )
@@ -134,8 +134,8 @@ class SSLLabs2009e(BaseRating):
             RatingRule(
                 "cipher.protocol_version",
                 rules=[
-                    lambda method: 6 if method == reg.version.SSLv2 else None,
-                    lambda method: 1 if method == reg.version.TLSv12 else None,
+                    lambda v, kb: 6 if v == reg.version.SSLv2 else None,
+                    lambda v, kb: 1 if v == reg.version.TLSv12 else None,
                 ]
             )
         )
@@ -144,8 +144,8 @@ class SSLLabs2009e(BaseRating):
             RatingRule(
                 "server.certificate.x509.signature_algorithm",
                 rules=[
-                    lambda algorithm: 6 if algorithm.startswith("md2") else None,
-                    lambda algorithm: 6 if algorithm.startswith("md5") else None,
+                    lambda v, kb: 6 if v.startswith("md2") else None,
+                    lambda v, kb: 6 if v.startswith("md5") else None,
                 ]
             )
         )
@@ -154,7 +154,7 @@ class SSLLabs2009e(BaseRating):
             RatingRule(
                 "server.certificate.x509.not_after",
                 rules=[
-                    lambda date: 6 if date < datetime.now() else None
+                    lambda v, kb: 6 if v < datetime.now() else None
                 ],
             )
         )
@@ -163,7 +163,7 @@ class SSLLabs2009e(BaseRating):
             RatingRule(
                 "server.certificate.x509.not_before",
                 rules=[
-                    lambda date: 6 if date > datetime.now() else None
+                    lambda v, kb: 6 if v > datetime.now() else None
                 ],
             )
         )
@@ -172,8 +172,8 @@ class SSLLabs2009e(BaseRating):
             RatingRule(
                 "server.renegotiation.secure",
                 rules=[
-                    lambda status: 6 if status == False else None,
-                    lambda status: 1 if status == True else None
+                    lambda v, kb: 6 if v == False else None,
+                    lambda v, kb: 1 if v == True else None
                 ]
             )
         )
