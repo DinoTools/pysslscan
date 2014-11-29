@@ -29,10 +29,11 @@ class NoneRating(BaseRating):
 
 class RatingRule(object):
     def __init__(self, name, description="", result_descriptions=None,
-            rules=[]):
+            result_refs=None, rules=[]):
         self.name = name
         self.description = description
         self._result_descriptions = result_descriptions
+        self._result_refs = result_refs
         self._rules = rules
 
     def rate(self, value):
@@ -73,6 +74,12 @@ class RatingResult(object):
         tmp = self._rule._result_descriptions.get(self._result_reason)
         if tmp is None:
             tmp = self._rule._result_descriptions.get(self._result_value)
+        return tmp
+
+    def get_result_refs(self):
+        tmp = self._rule._result_refs.get(self._result_reason)
+        if tmp is None:
+            tmp = self._rule._result_refs.get(self._result_value)
         return tmp
 
     def get_value(self):
