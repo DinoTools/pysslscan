@@ -304,7 +304,7 @@ class Terminal(BaseReport):
 
         print("Preferred Server Cipher(s):")
         for cipher in ciphers:
-            rating_version = self._rating.rate('cipher.version', cipher.protocol_version)
+            rating_version = self._rating.rate('cipher.protocol_version', cipher.protocol_version)
             if cipher.cipher_suite == None:
                 print(
                     "  {1}{0:7}{2} Protocol version not supported".format(
