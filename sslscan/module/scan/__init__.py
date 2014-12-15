@@ -248,11 +248,11 @@ class BaseInfoScan(BaseScan):
 
         return None
 
-    def _connect_internal_ssl(self, protocol_verions=None):
+    def _connect_internal_ssl(self, protocol_versions=None):
         import ssl
         from sslscan._helper.int_ssl import convert_versions2methods
 
-        if protocol_verions is None:
+        if protocol_versions is None:
             protocol_versions = self._scanner.get_enabled_versions()
 
         methods = convert_versions2methods(protocol_versions)
@@ -276,12 +276,12 @@ class BaseInfoScan(BaseScan):
 
         return None
 
-    def _connect_openssl(self, protocol_verions=None):
+    def _connect_openssl(self, protocol_versions=None):
         if openssl_enabled == False:
             return None
         from sslscan._helper.openssl import convert_versions2methods
 
-        if protocol_verions is None:
+        if protocol_versions is None:
             protocol_versions = self._scanner.get_enabled_versions()
 
         methods = convert_versions2methods(protocol_versions)
