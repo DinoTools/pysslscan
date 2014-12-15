@@ -35,15 +35,7 @@ class BaseScan(BaseModule):
 
     def _build_tls_base_client_hello(self, protocol_version, cipher_suites):
 
-        ver_major = 3
-        if protocol_version == flextls.registry.version.SSLv3:
-            ver_minor = 0
-        elif protocol_version == flextls.registry.version.TLSv10:
-            ver_minor = 1
-        elif protocol_version == flextls.registry.version.TLSv11:
-            ver_minor = 2
-        elif protocol_version == flextls.registry.version.TLSv12:
-            ver_minor = 3
+        ver_major, ver_minor = flextls.helper.get_tls_version(protocol_version)
 
         hash_algorithms = flextls.registry.tls.hash_algorithms.get_ids()
         sign_algorithms = flextls.registry.tls.signature_algorithms.get_ids()
@@ -145,6 +137,7 @@ class BaseScan(BaseModule):
 
     def _scan_tls_cipher_suites(self, protocol_version, cipher_suites, limit=False):
         kb = self._scanner.get_knowledge_base()
+        expected_version = flextls.helper.get_tls_version(protocol_version)
 
         cipher_suites = cipher_suites[:]
 
@@ -186,6 +179,11 @@ class BaseScan(BaseModule):
                     if isinstance(record.payload, Handshake):
                         if isinstance(record.payload.payload, ServerHello):
                             server_hello = record.payload.payload
+                            server_version = (server_hello.version.major,
+                                              server_hello.version.minor)
+                            if expected_version != server_version:
+                                server_hello = None
+                                break
 
                         if raw_certs is None and isinstance(record.payload.payload, ServerCertificate):
                             raw_certs = []
