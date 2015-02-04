@@ -6,6 +6,9 @@ Changelog
 
 .. note:: This version is not yet released and is under active development.
 
+* Add support to scan DTLS 1.0 enabled services
+* Add support to handle fragmentation on the record layer
+
 0.4 - 2014-11-17
 ~~~~~~~~~~~~~~~~
 

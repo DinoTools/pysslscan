@@ -14,7 +14,11 @@ Features
 --------
 
 * Query SSL services
-* Supported cryptographic protocols: SSLv2, SSLv3, TLS 1.0, TLS 1.1 and TLS 1.2
+* Supported cryptographic protocols:
+
+  * SSLv2, SSLv3, TLS 1.0, TLS 1.1 and TLS 1.2
+  * DTLS 1.0
+
 * Supported Protocols: TCP, HTTP, IMAP, POP3 and SMTP
 * IPv4 and IPv6
 * Scan modules:
@@ -44,7 +48,7 @@ Requirements:
 * Python 2.7 or Python >= 3.2
 * Python packages:
 
-  * flextls >= 0.2
+  * flextls >= 0.3dev1
   * six >= 1.4.1
 
 * Python packages(optional):
