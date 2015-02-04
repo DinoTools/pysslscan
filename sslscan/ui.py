@@ -150,7 +150,7 @@ def run_scan(args):
             scanner.config.set_value(name, True)
 
     args_dict = vars(args)
-    opt_names = ["ssl2", "ssl3", "tls10", "tls11", "tls12"]
+    opt_names = ["ssl2", "ssl3", "tls10", "tls11", "tls12", "dtls10", "dtls12"]
     for name in list(opt_names):
         opt_names.append("no-%s" % name)
 
@@ -175,10 +175,22 @@ def run_scan(args):
         if scanner.config.get_value(name):
             enabled_ssl_method_found = True
             break
-    if not enabled_ssl_method_found:
+
+    enabled_dtls_method_found = False
+    for name in ["dtls10", "dtls12"]:
+        if scanner.config.get_value(name):
+            enabled_dtls_method_found = True
+            break
+    if not enabled_ssl_method_found and not enabled_dtls_method_found:
         logger.error(
-            "No SSL/TLS method enabled. "
+            "No SSL/TLS or DTLS method enabled. "
             "Example: Use --tls10 to enable TLS 1.0"
+        )
+        return 1
+
+    if enabled_ssl_method_found and enabled_dtls_method_found:
+        logger.error(
+            "SSL/TLS and DTLS are not compatible."
         )
         return 1
 
@@ -463,7 +475,9 @@ def run():
         ("ssl3", "SSLv3"),
         ("tls10", "TLS1.0"),
         ("tls11", "TLS1.1"),
-        ("tls12", "TLS1.2")
+        ("tls12", "TLS1.2"),
+        ("dtls10", "DTLS1.0"),
+        ("dtls12", "DTLS1.2")
     ]
     for name, label in opt_names:
         group_method.add_argument(

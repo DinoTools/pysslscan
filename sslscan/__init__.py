@@ -72,6 +72,22 @@ class Scanner(object):
                 "help": "",
                 "type": "bool"
             }
+        ),
+        (
+            "dtls10", {
+                "default": False,
+                "negation": "no-dtls10",
+                "help": "",
+                "type": "bool"
+            }
+        ),
+        (
+            "dtls12", {
+                "default": False,
+                "negation": "no-dtls12",
+                "help": "",
+                "type": "bool"
+            }
         )
     ]
     def __init__(self, module_manager=None):
@@ -132,6 +148,10 @@ class Scanner(object):
             versions.append(flextls.registry.version.TLSv11)
         if self.config.get_value('tls12'):
             versions.append(flextls.registry.version.TLSv12)
+        if self.config.get_value('dtls10'):
+            versions.append(flextls.registry.version.DTLSv10)
+        if self.config.get_value('dtls12'):
+            versions.append(flextls.registry.version.DTLSv12)
 
         return versions
 

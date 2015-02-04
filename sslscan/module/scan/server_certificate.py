@@ -32,9 +32,9 @@ class ServerCertificate(BaseScan):
                 if protocol_version == flextls.registry.version.SSLv2:
                     continue
                 else:
-                    cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
+                    cipher_suites = flextls.registry.tls.cipher_suites[:]
                     try:
-                        self._scan_tls_cipher_suites(
+                        self._scan_cipher_suites(
                             protocol_version,
                             cipher_suites,
                             limit=1
