@@ -148,6 +148,8 @@ class BaseScan(BaseModule):
             conn = self._scanner.handler.connect()
             conn.settimeout(2.0)
 
+            conn_tls = flextls.TLSv10Connection()
+
             record_tls = self._build_tls_base_client_hello(
                 protocol_version,
                 cipher_suites
@@ -157,7 +159,7 @@ class BaseScan(BaseModule):
 
             time_start = datetime.now()
             server_hello = None
-            data = b""
+
             raw_certs = kb.get("server.certificate.raw")
             while server_hello is None or raw_certs is None:
                 tmp_time = datetime.now() - time_start
@@ -165,33 +167,30 @@ class BaseScan(BaseModule):
                     return detected_ciphers
 
                 try:
-                    tmp_data = conn.recv(4096)
+                    data = conn.recv(4096)
                 except ConnectionError:
                     return detected_ciphers
 
-                data += tmp_data
-                while True:
-                    try:
-                        (record, data) = RecordSSLv3.decode(data)
-                    except NotEnoughData:
-                        break
+                conn_tls.decode(data)
 
-                    if isinstance(record.payload, Handshake):
-                        if isinstance(record.payload.payload, ServerHello):
-                            server_hello = record.payload.payload
+                while not conn_tls.is_empty():
+                    record = conn_tls.pop_record()
+
+                    if isinstance(record, Handshake):
+                        if isinstance(record.payload, ServerHello):
+                            server_hello = record.payload
                             server_version = (server_hello.version.major,
                                               server_hello.version.minor)
                             if expected_version != server_version:
                                 server_hello = None
                                 break
-
-                        if raw_certs is None and isinstance(record.payload.payload, ServerCertificate):
+                        elif raw_certs is None and isinstance(record.payload, ServerCertificate):
                             raw_certs = []
-                            for raw_cert in record.payload.payload.certificate_list:
+                            for raw_cert in record.payload.certificate_list:
                                 raw_certs.append(raw_cert.value)
                             kb.set("server.certificate.raw", raw_certs)
-                    elif isinstance(record.payload, Alert):
-                        if record.payload.level == 2:
+                    elif isinstance(record, Alert):
+                        if record.level == 2:
                             return detected_ciphers
 
             conn.close()
