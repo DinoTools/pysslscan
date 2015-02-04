@@ -5,8 +5,16 @@ Features
 --------
 
 * Query SSL services
-* Supported cryptographic protocols: SSLv2, SSLv3, TLS 1.0, TLS 1.1 and TLS 1.2
-* Supported Protocols: TCP, HTTP, IMAP, POP3 and SMTP
+* Supported cryptographic protocols:
+
+  * SSLv2, SSLv3, TLS 1.0, TLS 1.1 and TLS 1.2
+  * DTLS 1.0
+
+* Supported Protocols:
+
+  * TCP, HTTP, IMAP, POP3 and SMTP
+  * UDP
+
 * IPv4 and IPv6
 * Scan modules:
 
