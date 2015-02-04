@@ -7,10 +7,11 @@ from flextls.field import CipherSuiteField, CompressionMethodField
 from flextls.field import SSLv2CipherSuiteField
 from flextls.field import ServerNameField, HostNameField
 from flextls.protocol.handshake import ClientHello, Handshake, ServerHello, ServerCertificate
+from flextls.protocol.handshake import DTLSv10ClientHello, DTLSv10Handshake, DTLSv10HelloVerifyRequest
 from flextls.protocol.handshake import SSLv2ClientHello, SSLv2ServerHello
 from flextls.protocol.handshake.extension import EllipticCurves, SignatureAlgorithms, Extension, SessionTicketTLS
-from flextls.protocol.handshake.extension import ServerNameIndication
-from flextls.protocol.record import RecordSSLv2, RecordSSLv3
+from flextls.protocol.handshake.extension import ServerNameIndication, Heartbeat as HeartbeatExt, EcPointFormats
+from flextls.protocol.record import RecordSSLv2, RecordSSLv3, RecordDTLSv10
 from flextls.protocol.alert import Alert
 import six
 
@@ -32,6 +33,75 @@ if six.PY2:
 class BaseScan(BaseModule):
     def __init__(self, **kwargs):
         BaseModule.__init__(self, **kwargs)
+
+    def _build_dtls_base_client_hello(self, protocol_version, cipher_suites):
+        ver_major, ver_minor = flextls.helper.get_tls_version(protocol_version)
+
+        hash_algorithms = flextls.registry.tls.hash_algorithms.get_ids()
+        sign_algorithms = flextls.registry.tls.signature_algorithms.get_ids()
+        comp_methods = flextls.registry.tls.compression_methods.get_ids()
+
+        hello = DTLSv10ClientHello()
+
+        for i in cipher_suites:
+            cipher = CipherSuiteField()
+            cipher.value = i
+            hello.cipher_suites.append(cipher)
+
+        for comp_id in comp_methods:
+            comp = CompressionMethodField()
+            comp.value = comp_id
+            hello.compression_methods.append(comp)
+
+        server_name = ServerNameField()
+        server_name.payload = HostNameField("")
+        server_name.payload.value = self._scanner.handler.hostname.encode("utf-8")
+        tmp_sni = ServerNameIndication()
+        tmp_sni.server_name_list.append(server_name)
+        tmp_ext_sni = Extension() + tmp_sni
+        hello.extensions.append(tmp_ext_sni)
+
+        ext_elliptic_curves = EllipticCurves()
+        a = ext_elliptic_curves.get_field("elliptic_curve_list")
+        for i in flextls.registry.ec.named_curves.get_ids():
+            v = a.item_class("unnamed", None)
+            v.value = i
+            a.value.append(v)
+
+        hello.extensions.append(Extension() + ext_elliptic_curves)
+
+        ext_ec_point_formats = EcPointFormats()
+        a = ext_ec_point_formats.get_field("point_format_list")
+        for i in [0, 1, 2]:
+            v = a.item_class("unnamed", None)
+            v.value = i
+            a.value.append(v)
+
+        hello.extensions.append(Extension() + ext_ec_point_formats)
+
+        ext_signature_algorithm = SignatureAlgorithms()
+        a = ext_signature_algorithm.get_field("supported_signature_algorithms")
+        for i in hash_algorithms:
+            for j in sign_algorithms:
+                v = a.item_class("unnamed")
+                v.hash = i
+                v.signature = j
+                a.value.append(v)
+
+        hello.extensions.append(Extension() + ext_signature_algorithm)
+
+        hello.extensions.append(Extension() + SessionTicketTLS())
+        hb_ext = HeartbeatExt()
+        hb_ext.mode = 1
+        hello.extensions.append(Extension() + hb_ext)
+
+        msg_hello = RecordDTLSv10() + (DTLSv10Handshake() + hello)
+        msg_hello.payload.payload.random.random_bytes = os.urandom(32)
+        msg_hello.version.major = ver_major
+        msg_hello.version.minor = ver_minor
+        msg_hello.payload.payload.version.major = ver_major
+        msg_hello.payload.payload.version.minor = ver_minor
+        return msg_hello
 
     def _build_tls_base_client_hello(self, protocol_version, cipher_suites):
 
@@ -89,6 +159,12 @@ class BaseScan(BaseModule):
         msg_hello.payload.payload.version.minor = ver_minor
         return msg_hello
 
+    def _scan_cipher_suites(self, protocol_version, cipher_suites, limit=False):
+        if protocol_version & flextls.registry.version.DTLS != 0:
+            return self._scan_dtls_cipher_suites(protocol_version, cipher_suites, limit=limit)
+
+        return self._scan_tls_cipher_suites(protocol_version, cipher_suites, limit=limit)
+
     def _scan_ssl2_cipher_suites(self, protocol_version, cipher_suites):
         conn = self._scanner.handler.connect()
 
@@ -135,11 +211,140 @@ class BaseScan(BaseModule):
         conn.close()
         return detected_ciphers
 
+    def _scan_dtls_cipher_suites(self, protocol_version, cipher_suites, limit=False):
+        kb = self._scanner.get_knowledge_base()
+        expected_version = flextls.helper.get_tls_version(protocol_version)
+
+        # Get IDs of allowed cipher suites
+        tmp = []
+        for cipher_suite in cipher_suites:
+            if cipher_suite.dtls is True:
+                tmp.append(cipher_suite.id)
+        cipher_suites = tmp
+
+        detected_ciphers = []
+        count = 0
+        from flextls import BaseDTLSConnection
+
+        while True:
+            conn = self._scanner.handler.connect()
+            conn.settimeout(2.0)
+            conn_dtls = BaseDTLSConnection()
+
+            record_dtls = self._build_dtls_base_client_hello(
+                protocol_version,
+                cipher_suites
+            )
+
+            conn.send(record_dtls.encode())
+            time_start = datetime.now()
+            verify_request = None
+
+            while verify_request is None:
+                tmp_time = datetime.now() - time_start
+                if tmp_time.total_seconds() > 5.0:
+                    return detected_ciphers
+
+                try:
+                    data = conn.recv(4096)
+                except ConnectionError:
+                    return detected_ciphers
+
+                conn_dtls.decode(data)
+
+                if not conn_dtls.is_empty():
+                    record = conn_dtls.pop_record()
+                    if isinstance(record, DTLSv10Handshake):
+                        if isinstance(record.payload, DTLSv10HelloVerifyRequest):
+                            verify_request = record.payload
+                            break
+                    elif isinstance(record, Alert):
+                        if record.level == 2:
+                            conn.close()
+                            return detected_ciphers
+
+            if verify_request is None:
+                return
+            record_dtls.sequence_number = 1
+            record_dtls.payload.message_seq = 1
+            record_dtls.payload.payload.cookie = verify_request.cookie
+            conn.send(record_dtls.encode())
+
+            time_start = datetime.now()
+            server_hello = None
+            raw_certs = kb.get("server.certificate.raw")
+            while server_hello is None or raw_certs is None:
+                tmp_time = datetime.now() - time_start
+                if tmp_time.total_seconds() > 5.0:
+                    return detected_ciphers
+
+                try:
+                    data = conn.recv(4096)
+                except ConnectionError:
+                    return detected_ciphers
+
+                conn_dtls.decode(data)
+                while not conn_dtls.is_empty():
+                    record = conn_dtls.pop_record()
+
+                    if isinstance(record, DTLSv10Handshake):
+                        if isinstance(record.payload, ServerHello):
+                            server_hello = record.payload
+                            server_version = (server_hello.version.major,
+                                              server_hello.version.minor)
+                            if expected_version != server_version:
+                                server_hello = None
+                                break
+
+                        if raw_certs is None and isinstance(record.payload, ServerCertificate):
+                            raw_certs = []
+                            for raw_cert in record.payload.certificate_list:
+                                raw_certs.append(raw_cert.value)
+                            kb.set("server.certificate.raw", raw_certs)
+
+                    elif isinstance(record, Alert):
+                        if record.level == 2:
+                            return detected_ciphers
+
+            ver_major, ver_minor = flextls.helper.get_tls_version(protocol_version)
+            record = RecordDTLSv10()
+            record.version.major = ver_major
+            record.version.minor = ver_minor
+            record.sequence_number = 2
+            record.content_type = 21
+            record_alert = Alert()
+            record_alert.level = 1
+            record_alert.description = 0
+            record.payload = record_alert
+            conn.send(record.encode())
+            conn.close()
+            if server_hello is None:
+                break
+
+            # get compression method
+            if kb.get("server.session.compression") is None:
+                comp_method = flextls.registry.tls.compression_methods.get(
+                    server_hello.compression_method
+                )
+                kb.set("server.session.compression", comp_method)
+
+            detected_ciphers.append(server_hello.cipher_suite)
+            cipher_suites.remove(server_hello.cipher_suite)
+            count = count + 1
+            if limit is not False and limit <= count:
+                break
+
+        return detected_ciphers
+
     def _scan_tls_cipher_suites(self, protocol_version, cipher_suites, limit=False):
         kb = self._scanner.get_knowledge_base()
         expected_version = flextls.helper.get_tls_version(protocol_version)
 
-        cipher_suites = cipher_suites[:]
+        # Get IDs of allowed cipher suites
+        tmp = []
+        for cipher_suite in cipher_suites:
+            tmp.append(cipher_suite.id)
+        cipher_suites = tmp
 
         detected_ciphers = []
         count = 0

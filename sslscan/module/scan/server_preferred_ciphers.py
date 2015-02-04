@@ -24,14 +24,14 @@ class ServerPreferredCiphers(BaseScan):
             if protocol_version == flextls.registry.version.SSLv2:
                 continue
             else:
-                cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
+                cipher_suites = flextls.registry.tls.cipher_suites[:]
                 try:
-                    tmp1 = self._scan_tls_cipher_suites(protocol_version, cipher_suites, limit=2)
+                    tmp1 = self._scan_cipher_suites(protocol_version, cipher_suites, limit=2)
                 except Timeout:
                     continue
                 cipher_suites.reverse()
                 try:
-                    tmp2 = self._scan_tls_cipher_suites(protocol_version, cipher_suites, limit=1)
+                    tmp2 = self._scan_cipher_suites(protocol_version, cipher_suites, limit=1)
                 except Timeout:
                     continue
 
