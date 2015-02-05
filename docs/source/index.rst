@@ -12,7 +12,7 @@ Features
 
 * Supported Protocols:
 
-  * TCP, HTTP, IMAP, POP3 and SMTP
+  * TCP, HTTP, IMAP, POP3, SMTP, LDAP and RDP
   * UDP
 
 * IPv4 and IPv6
