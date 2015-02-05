@@ -194,7 +194,7 @@ class Scanner(object):
         module = self._module_manager.get(name, base_class=BaseHandler)
         if module is None:
             return False
-        module = module(host=uri.hostname, port=uri.port)
+        module = module(host=uri.hostname, port=uri.port, scanner=self)
         tmp = parse_qs(uri.query, keep_blank_values=True)
         config = {}
         for k, v in tmp.items():
