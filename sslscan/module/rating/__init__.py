@@ -17,6 +17,8 @@ class BaseRating(BaseModule):
     def rate(self, rule_name, value, item=None, kb=None):
         if item is None:
             item = value
+        if kb is None:
+            kb = self._scanner.get_knowledge_base()
         rule = self.get_rule(rule_name)
         if rule is None:
             return None
