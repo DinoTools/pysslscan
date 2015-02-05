@@ -25,8 +25,8 @@ except:
 
 from sslscan.module import BaseModule
 
+import socket
 if six.PY2:
-    import socket
     ConnectionError = socket.error
 
 
@@ -374,6 +374,9 @@ class BaseScan(BaseModule):
                 try:
                     data = conn.recv(4096)
                 except ConnectionError:
+                    return detected_ciphers
+                except socket.timeout:
+                    conn.close()
                     return detected_ciphers
 
                 conn_tls.decode(data)
