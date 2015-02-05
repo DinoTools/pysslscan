@@ -194,7 +194,7 @@ class Scanner(object):
         module = self._module_manager.get(name, base_class=BaseRating)
         if module is None:
             return NoneRating()
-        return module()
+        return module(scanner=self)
 
     def reset_knowledge_base(self):
         """Create and activate a new knowledge base for this scanner."""
