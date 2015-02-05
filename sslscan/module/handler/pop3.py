@@ -1,6 +1,7 @@
 import re
 
 from sslscan import modules
+from sslscan.exception import StartTLSError
 from sslscan.module.handler.tcp import TCP
 
 
@@ -58,7 +59,7 @@ class POP3(TCP):
         # +OK Begin TLS negotiation now'
         print(buf)
         if not buf.startswith(b"+OK Begin"):
-            return None
+            raise StartTLSError()
 
         return conn
 

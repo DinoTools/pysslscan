@@ -3,6 +3,7 @@ from smtplib import SMTP as PySMTP
 from socket import socket
 
 from sslscan import modules
+from sslscan.exception import StartTLSError
 from sslscan.module.handler.tcp import TCP
 
 
@@ -60,13 +61,13 @@ class SMTP(TCP):
         conn.send(b"STARTTLS\r\n")
         buf = conn.recv(4096)
         if not buf.startswith(b"220"):
-            return None
+            raise StartTLSError()
 
         return conn
 
     def get_server_info(self, conn=None):
         if self._server_info is None and conn is not None:
-           self._connect(conn)
+            self._connect(conn)
         return self._server_info
 
 

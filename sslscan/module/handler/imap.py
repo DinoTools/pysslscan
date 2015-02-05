@@ -2,6 +2,7 @@ import re
 from socket import socket
 
 from sslscan import modules
+from sslscan.exception import StartTLSError
 from sslscan.module.handler.tcp import TCP
 
 
@@ -52,15 +53,14 @@ class IMAP(TCP):
         buf = conn.recv(4096)
         buf = buf.strip()
         if not buf.startswith(b". OK"):
-            return None
+            raise StartTLSError()
 
         return conn
 
     def get_server_info(self, conn=None):
         if self._server_info is None and conn is not None:
-           self._connect(conn)
+            self._connect(conn)
         return self._server_info
-
 
 
 modules.register(IMAP)

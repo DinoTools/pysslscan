@@ -1,6 +1,7 @@
 from socket import socket
 
 from sslscan import modules
+from sslscan.exception import StartTLSError
 from sslscan.module.handler.tcp import TCP
 
 
@@ -38,7 +39,7 @@ class LDAP(TCP):
         # ToDo: Improve parsing
         # b"0\x84\x00\x00\x00(\x02\x01\x01x\x84\x00\x00\x00\x1f\n\x01\x00\x04\x00\x04\x00\x8a\x161.3.6.1.4.1.1466.20037"
         if not buf.endswith(b"1.3.6.1.4.1.1466.20037"):
-            return None
+            raise StartTLSError()
 
         return conn
 

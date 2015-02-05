@@ -30,4 +30,5 @@ class Timeout(Exception):
 
 
 class StartTLSError(Exception):
-    pass
+    def __init__(self, *args):
+        Exception.__init__(self, "There was an error during the STARTTLS command", *args)

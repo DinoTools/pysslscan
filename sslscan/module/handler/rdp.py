@@ -1,6 +1,7 @@
 from socket import socket
 
 from sslscan import modules
+from sslscan.exception import StartTLSError
 from sslscan.module.handler.tcp import TCP
 
 
@@ -36,13 +37,13 @@ class RDP(TCP):
         buf = conn.recv(4)
 
         if not buf or len(buf) != 4 or buf[:2] != b"\x03\x00":
-            raise StartTLSError(self.ERR_NO_STARTTLS)
+            raise StartTLSError()
 
         import struct
         packet_len = struct.unpack(">H", buf[2:])[0] - 4
         data = conn.recv(packet_len)
         if not data or len(data) != packet_len :
-            raise StartTLSError(self.ERR_NO_STARTTLS)
+            raise StartTLSError()
 
         return conn
 
