@@ -24,5 +24,10 @@ class OptionValueError(BaseConfigError):
         )
         return s
 
+
 class Timeout(Exception):
+    pass
+
+
+class StartTLSError(Exception):
     pass
