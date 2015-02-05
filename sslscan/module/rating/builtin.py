@@ -18,10 +18,10 @@ class BuiltIn_0_5(BaseRating):
             RatingRule(
                 "cipher.bits",
                 rules=[
-                    lambda v, kb: 6 if v == 0 else None,
-                    lambda v, kb: 5 if v < 128 else None,
-                    lambda v, kb: 3 if v < 256 else None,
-                    lambda v, kb: 0 if v >= 256 else None
+                    lambda v, i, kb: 6 if v == 0 else None,
+                    lambda v, i, kb: 5 if v < 128 else None,
+                    lambda v, i, kb: 3 if v < 256 else None,
+                    lambda v, i, kb: 0 if v >= 256 else None
                 ]
             )
         )
@@ -37,9 +37,9 @@ class BuiltIn_0_5(BaseRating):
                     "poodle": ["cve:CVE-2014-3566"],
                 },
                 rules=[
-                    lambda m, kb: (6, "sslv2") if m == reg.version.SSLv2 else None,
-                    lambda m, kb: (5, "poodle") if m == reg.version.SSLv3 else None,
-                    lambda m, kb: 1 if m == reg.version.TLSv12 else None,
+                    lambda v, i, kb: (6, "sslv2") if v == reg.version.SSLv2 else None,
+                    lambda v, i, kb: (5, "poodle") if v == reg.version.SSLv3 else None,
+                    lambda v, i, kb: 1 if v == reg.version.TLSv12 else None,
                 ]
             )
         )
@@ -48,8 +48,8 @@ class BuiltIn_0_5(BaseRating):
             RatingRule(
                 "server.certificate.x509.signature_algorithm",
                 rules=[
-                    lambda v, kb: 6 if v.startswith("md2") else None,
-                    lambda v, kb: 6 if v.startswith("md5") else None,
+                    lambda v, i, kb: 6 if v.startswith("md2") else None,
+                    lambda v, i, kb: 6 if v.startswith("md5") else None,
                 ]
             )
         )
@@ -58,7 +58,7 @@ class BuiltIn_0_5(BaseRating):
             RatingRule(
                 "server.certificate.x509.not_after",
                 rules=[
-                    lambda v, kb: 6 if v < datetime.now() else None
+                    lambda v, i, kb: 6 if v < datetime.now() else None
                 ],
             )
         )
@@ -67,7 +67,7 @@ class BuiltIn_0_5(BaseRating):
             RatingRule(
                 "server.certificate.x509.not_before",
                 rules=[
-                    lambda v, kb: 6 if v > datetime.now() else None
+                    lambda v, i, kb: 6 if v > datetime.now() else None
                 ],
             )
         )
@@ -76,8 +76,8 @@ class BuiltIn_0_5(BaseRating):
             RatingRule(
                 "server.renegotiation.secure",
                 rules=[
-                    lambda v, kb: 6 if v == False else None,
-                    lambda v, kb: 1 if v == True else None
+                    lambda v, i, kb: 6 if v == False else None,
+                    lambda v, i, kb: 1 if v == True else None
                 ]
             )
         )

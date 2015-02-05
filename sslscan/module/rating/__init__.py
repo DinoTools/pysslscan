@@ -14,11 +14,13 @@ class BaseRating(BaseModule):
     def get_rule(self, name):
         return self._rules.get(name)
 
-    def rate(self, rule_name, value, kb=None):
+    def rate(self, rule_name, value, item=None, kb=None):
+        if item is None:
+            item = value
         rule = self.get_rule(rule_name)
         if rule is None:
             return None
-        return rule.rate(value, kb)
+        return rule.rate(value, item, kb)
 
 
 class NoneRating(BaseRating):
@@ -37,12 +39,14 @@ class RatingRule(object):
         self._result_refs = result_refs
         self._rules = rules
 
-    def rate(self, value, kb=None):
+    def rate(self, value, item=None, kb=None):
+        if item is None:
+            item = value
         if kb is None:
             kb = KnowledgeBase()
         result = None
         for rule in self._rules:
-            result = rule(value, kb)
+            result = rule(value, item, kb)
             if result is not None:
                 break
         return RatingResult(result, self)
