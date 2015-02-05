@@ -39,6 +39,18 @@ class KnowledgeBase(object):
         }
         self._items = {}
 
+    def add(self, kb_id, value):
+        """
+        Add the value to the KB value with the given key. If a value does not exist it is initialised with 0.
+
+        :param String kb_id: The ID of the value in the KB
+        :param Integer|Float value: The value to add to the value from the KB
+        :return:
+        """
+        v = self.get(kb_id, 0)
+        v += value
+        self.set(kb_id, v)
+
     def append(self, kb_id, value):
         """
         Append a new value to the knowledge base.
