@@ -3,7 +3,7 @@ from socket import socket
 from flextls import registry as reg
 
 from sslscan import modules
-from sslscan.module.rating import BaseRating
+from sslscan.module.rating import BaseRating, RatingRule
 
 
 class RBSec(BaseRating):
@@ -19,25 +19,47 @@ class RBSec(BaseRating):
 
     def __init__(self, **kwargs):
         BaseRating.__init__(self, **kwargs)
-        self._rules.update({
-            "cipher.bits": [
-                lambda bits: 1 if bits > 56 else None,
-                lambda bits: 3 if bits > 40 else None,
-                lambda bits: 5
-            ],
-            "cipher.protocol_version": [
-                lambda method: 6 if method == reg.version.SSLv2 else None,
-            ],
-            "cipher.name": [
-                lambda name: 5 if "EXP" in name else None,
-                lambda name: 3 if "RC" in name else None,
-                lambda name: 5 if "ADH" in name else None
-            ],
-            "server.renegotiation.secure": [
-                lambda status: 6 if status == False else None,
-                lambda status: 1 if status == True else None
-            ]
-        })
+
+        self.add_rule(
+            RatingRule(
+                "cipher.bits",
+                rules=[
+                    lambda v, i, kb: 1 if v > 56 else None,
+                    lambda v, i, kb: 3 if v > 40 else None,
+                    lambda v, i, kb: 5
+                ]
+            )
+        )
+
+        self.add_rule(
+            RatingRule(
+                "cipher.protocol_version",
+                rules=[
+                    lambda v, i, kb: 6 if v == reg.version.SSLv2 else None,
+                ]
+            )
+        )
+
+        self.add_rule(
+            RatingRule(
+                "cipher.name",
+                rules=[
+                    lambda v, i, kb: 5 if "EXP" in v else None,
+                    lambda v, i, kb: 3 if "RC" in v else None,
+                    lambda v, i, kb: 5 if "ADH" in v else None
+                ],
+            )
+        )
+
+        self.add_rule(
+            RatingRule(
+                "server.renegotiation.secure",
+                rules=[
+                    lambda v, i, kb: 6 if v == False else None,
+                    lambda v, i, kb: 1 if v == True else None
+                ]
+            )
+        )
 
 
 modules.register(RBSec)

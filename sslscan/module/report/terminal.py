@@ -23,9 +23,9 @@ class Terminal(BaseReport):
 
         print("Supported Client Cipher(s):")
         for cipher in ciphers:
-            rating_bits = self._rating.rate('cipher.bits', cipher.bits)
-            rating_method = self._rating.rate('cipher.method', cipher.method)
-            rating_name = self._rating.rate('cipher.name', cipher.name)
+            rating_bits = self._rating.rate('cipher.bits', cipher.bits, cipher)
+            rating_method = self._rating.rate('cipher.method', cipher.method, cipher)
+            rating_name = self._rating.rate('cipher.name', cipher.name, cipher)
             print(
                 "  {3}{0:7}{6} {4}{1:>9}{6} {5}{2}{6}".format(
                     cipher.method_name,
@@ -99,7 +99,7 @@ class Terminal(BaseReport):
 #        print(x509.get_certificate_blob())
 
         version = x509.get_version()
-        rating_version = self._rating.rate('server.certificate.x509.version', version)
+        rating_version = self._rating.rate('server.certificate.x509.version', version, x509)
         print(
             "  Version: {1}{0}{2}".format(
                 version,
@@ -109,7 +109,7 @@ class Terminal(BaseReport):
         )
 
         serial = x509.get_serial_number()
-        rating_serial = self._rating.rate('server.certificate.x509.serial_number', serial)
+        rating_serial = self._rating.rate('server.certificate.x509.serial_number', serial, x509)
         print(
             "  Serial Number: {1}{0} (0x{0:x}){2}".format(
                 serial,
@@ -138,7 +138,8 @@ class Terminal(BaseReport):
                 tmp_value = getattr(tmp_issuer, tmp_name)
                 rating_tmp = self._rating.rate(
                     "server.certificate.x509.{}".format(rating_name),
-                    tmp_value
+                    tmp_value,
+                    x509
                 )
                 if tmp_value is None:
                     tmp_value = ""
@@ -155,7 +156,8 @@ class Terminal(BaseReport):
         )
         rating_date = self._rating.rate(
             "server.certificate.x509.not_before",
-            tmp_date
+            tmp_date,
+            x509
         )
         print(
             "  Not valid before: {1}{0}{2}".format(
@@ -171,7 +173,8 @@ class Terminal(BaseReport):
         )
         rating_date = self._rating.rate(
             "server.certificate.x509.not_after",
-            tmp_date
+            tmp_date,
+            x509
         )
         print(
             "  Not valid after: {1}{0}{2}".format(
@@ -188,7 +191,8 @@ class Terminal(BaseReport):
                 tmp_value = getattr(tmp_subject, tmp_name)
                 rating_tmp = self._rating.rate(
                     "server.certificate.x509.{}".format(rating_name),
-                    tmp_value
+                    tmp_value,
+                    x509
                 )
                 if tmp_value is None:
                     tmp_value = ""
@@ -244,12 +248,13 @@ class Terminal(BaseReport):
 
         print("Supported Server Cipher(s):")
         for cipher in ciphers:
-            rating_bits = self._rating.rate('cipher.bits', cipher.cipher_suite.bits)
+            rating_bits = self._rating.rate('cipher.bits', cipher.cipher_suite.bits, cipher)
             rating_protocol_version = self._rating.rate(
                 'cipher.protocol_version',
-                cipher.protocol_version
+                cipher.protocol_version,
+                cipher
             )
-            rating_name = self._rating.rate('cipher.name', cipher.cipher_suite.name)
+            rating_name = self._rating.rate('cipher.name', cipher.cipher_suite.name, cipher)
             print(
                 "  {0:9} {5}{1:7}{8} {6}{2:>9}{8} {7}{3}{8}  {4}".format(
                     cipher.status_name.capitalize(),
@@ -304,7 +309,7 @@ class Terminal(BaseReport):
 
         print("Preferred Server Cipher(s):")
         for cipher in ciphers:
-            rating_version = self._rating.rate('cipher.version', cipher.protocol_version)
+            rating_version = self._rating.rate('cipher.protocol_version', cipher.protocol_version, cipher)
             if cipher.cipher_suite == None:
                 print(
                     "  {1}{0:7}{2} Protocol version not supported".format(
@@ -325,8 +330,8 @@ class Terminal(BaseReport):
                 )
                 continue
 
-            rating_bits = self._rating.rate('cipher.bits', cipher.cipher_suite.bits)
-            rating_name = self._rating.rate('cipher.name', cipher.cipher_suite.name)
+            rating_bits = self._rating.rate('cipher.bits', cipher.cipher_suite.bits, cipher)
+            rating_name = self._rating.rate('cipher.name', cipher.cipher_suite.name, cipher)
             print(
                 "  {4}{0:7}{7} {5}{1:>9}{7} {6}{2}{7} {3}".format(
                     cipher.protocol_version_name,
