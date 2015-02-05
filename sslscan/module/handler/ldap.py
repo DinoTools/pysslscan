@@ -31,7 +31,7 @@ class LDAP(TCP):
         if not self.config.get_value("starttls"):
             return conn
 
-        conn.send(b'0\x1d\x02\x01\x01w\x18\x80\x161.3.6.1.4.1.1466.20037')
+        conn.send(b"0\x1d\x02\x01\x01w\x18\x80\x161.3.6.1.4.1.1466.20037")
 
         buf = conn.recv(4096)
 

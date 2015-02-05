@@ -64,7 +64,7 @@ class POP3(TCP):
 
     def get_server_info(self, conn=None):
         if self._server_info is None and conn is not None:
-           self._connect(conn)
+            self._connect(conn)
         return self._server_info
 
 

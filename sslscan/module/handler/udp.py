@@ -5,7 +5,7 @@ from socket import socket
 from time import sleep
 
 from sslscan import modules
-from sslscan.module.handler import BaseHandler
+from sslscan.module.handler import BaseHandler, Connection
 
 
 logger = logging.getLogger(__name__)
@@ -52,10 +52,12 @@ class UDP(BaseHandler):
 
         self.time_last_connect = datetime.now()
 
-        conn = socket(AF_INET, SOCK_DGRAM)
-        conn.connect((self.host, self.port))
-
-        return conn
+        sock = socket(AF_INET, SOCK_DGRAM)
+        sock.connect((self.host, self.port))
+        return Connection(
+            handler=self,
+            sock=sock
+        )
 
 
 modules.register(UDP)

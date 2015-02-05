@@ -4,7 +4,7 @@ from socket import socket
 from time import sleep
 
 from sslscan import modules
-from sslscan.module.handler import BaseHandler
+from sslscan.module.handler import BaseHandler, Connection
 
 
 logger = logging.getLogger(__name__)
@@ -53,10 +53,11 @@ class TCP(BaseHandler):
 
         self.time_last_connect = datetime.now()
 
-        conn = socket()
-        conn.connect((self.host, self.port))
-
-        return conn
-
+        sock = socket()
+        sock.connect((self.host, self.port))
+        return Connection(
+            handler=self,
+            sock=sock
+        )
 
 modules.register(TCP)
