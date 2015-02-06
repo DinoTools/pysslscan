@@ -83,5 +83,9 @@ class Connection(object):
     def send(self, *args, **kwargs):
         return self._handler.send(self._socket, *args, **kwargs)
 
+    def send_list(self, pkgs, *args, **kwargs):
+        for pkg in pkgs:
+            self._handler.send(self._socket, pkg, *args, **kwargs)
+
     def settimeout(self, *args, **kwargs):
         return self._socket.settimeout(*args, **kwargs)
