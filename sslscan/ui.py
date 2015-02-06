@@ -448,8 +448,7 @@ def run():
         1. Group options (e.g. --ssl)
         2. Enable options (e.g. --tls10)
         3. Disable options (e.g. --no-tls10)
-	"""
-    )
+        """)
     group_method = parser_scan.add_argument_group(
         title="Enable/Disable methods",
         description=tmp_description
