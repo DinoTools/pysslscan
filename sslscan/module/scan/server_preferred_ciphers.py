@@ -29,11 +29,6 @@ class ServerPreferredCiphers(BaseScan):
                     tmp1 = self._scan_cipher_suites(protocol_version, cipher_suites, limit=2)
                 except Timeout:
                     continue
-                cipher_suites.reverse()
-                try:
-                    tmp2 = self._scan_cipher_suites(protocol_version, cipher_suites, limit=1)
-                except Timeout:
-                    continue
 
                 if len(tmp1) == 0:
                     kb.append(
@@ -44,6 +39,12 @@ class ServerPreferredCiphers(BaseScan):
                             status=0,
                         )
                     )
+                    continue
+
+                cipher_suites.reverse()
+                try:
+                    tmp2 = self._scan_cipher_suites(protocol_version, cipher_suites, limit=1)
+                except Timeout:
                     continue
 
                 if tmp1[0] == tmp2[0]:
