@@ -11,7 +11,7 @@ from flextls.protocol.handshake import DTLSv10ClientHello, DTLSv10Handshake, DTL
 from flextls.protocol.handshake import SSLv2ClientHello, SSLv2ServerHello
 from flextls.protocol.handshake.extension import EllipticCurves, SignatureAlgorithms, Extension, SessionTicketTLS
 from flextls.protocol.handshake.extension import ServerNameIndication, Heartbeat as HeartbeatExt, EcPointFormats
-from flextls.protocol.record import RecordSSLv2, RecordSSLv3, RecordDTLSv10
+from flextls.protocol.record import RecordSSLv2
 from flextls.protocol.alert import Alert
 import six
 
@@ -95,13 +95,13 @@ class BaseScan(BaseModule):
         hb_ext.mode = 1
         hello.extensions.append(Extension() + hb_ext)
 
-        msg_hello = RecordDTLSv10() + (DTLSv10Handshake() + hello)
-        msg_hello.payload.payload.random.random_bytes = os.urandom(32)
-        msg_hello.version.major = ver_major
-        msg_hello.version.minor = ver_minor
-        msg_hello.payload.payload.version.major = ver_major
-        msg_hello.payload.payload.version.minor = ver_minor
-        return msg_hello
+        hello.random.random_bytes = os.urandom(32)
+        hello.version.major = ver_major
+        hello.version.minor = ver_minor
+        msg_handshake = DTLSv10Handshake()
+        msg_handshake.set_payload(hello)
+
+        return msg_handshake
 
     def _build_tls_base_client_hello(self, protocol_version, cipher_suites):
 
@@ -214,7 +214,6 @@ class BaseScan(BaseModule):
 
     def _scan_dtls_cipher_suites(self, protocol_version, cipher_suites, limit=False):
         kb = self._scanner.get_knowledge_base()
-        expected_version = flextls.helper.get_tls_version(protocol_version)
 
         # Get IDs of allowed cipher suites
         tmp = []
@@ -230,14 +229,14 @@ class BaseScan(BaseModule):
         while True:
             conn = self._scanner.handler.connect()
             conn.settimeout(2.0)
-            conn_dtls = BaseDTLSConnection()
+            conn_dtls = BaseDTLSConnection(protocol_version=protocol_version)
 
-            record_dtls = self._build_dtls_base_client_hello(
+            record_handshake = self._build_dtls_base_client_hello(
                 protocol_version,
                 cipher_suites
             )
 
-            conn.send(record_dtls.encode())
+            conn.send_list(conn_dtls.encode(record_handshake))
             time_start = datetime.now()
             verify_request = None
 
@@ -251,7 +250,11 @@ class BaseScan(BaseModule):
                 except ConnectionError:
                     return detected_ciphers
 
-                conn_dtls.decode(data)
+                try:
+                    conn_dtls.decode(data)
+                except WrongProtocolVersion:
+                    # ToDo: Send Alert
+                    return detected_ciphers
 
                 if not conn_dtls.is_empty():
                     record = conn_dtls.pop_record()
@@ -266,10 +269,9 @@ class BaseScan(BaseModule):
 
             if verify_request is None:
                 return
-            record_dtls.sequence_number = 1
-            record_dtls.payload.message_seq = 1
-            record_dtls.payload.payload.cookie = verify_request.cookie
-            conn.send(record_dtls.encode())
+
+            record_handshake.payload.cookie = verify_request.cookie
+            conn.send_list(conn_dtls.encode(record_handshake))
 
             time_start = datetime.now()
             server_hello = None
@@ -284,19 +286,17 @@ class BaseScan(BaseModule):
                 except ConnectionError:
                     return detected_ciphers
 
-                conn_dtls.decode(data)
+                try:
+                    conn_dtls.decode(data)
+                except WrongProtocolVersion:
+                    return detected_ciphers
+
                 while not conn_dtls.is_empty():
                     record = conn_dtls.pop_record()
 
                     if isinstance(record, DTLSv10Handshake):
                         if isinstance(record.payload, ServerHello):
                             server_hello = record.payload
-                            server_version = (server_hello.version.major,
-                                              server_hello.version.minor)
-                            if expected_version != server_version:
-                                server_hello = None
-                                break
-
                         if raw_certs is None and isinstance(record.payload, ServerCertificate):
                             raw_certs = []
                             for raw_cert in record.payload.certificate_list:
@@ -307,17 +307,10 @@ class BaseScan(BaseModule):
                         if record.level == 2:
                             return detected_ciphers
 
-            ver_major, ver_minor = flextls.helper.get_tls_version(protocol_version)
-            record = RecordDTLSv10()
-            record.version.major = ver_major
-            record.version.minor = ver_minor
-            record.sequence_number = 2
-            record.content_type = 21
             record_alert = Alert()
             record_alert.level = 1
             record_alert.description = 0
-            record.payload = record_alert
-            conn.send(record.encode())
+            conn.send_list(conn_dtls.encode(record_alert))
             conn.close()
             if server_hello is None:
                 break
