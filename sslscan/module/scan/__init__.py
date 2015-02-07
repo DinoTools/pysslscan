@@ -253,7 +253,12 @@ class BaseScan(BaseModule):
                 try:
                     conn_dtls.decode(data)
                 except WrongProtocolVersion:
-                    # ToDo: Send Alert
+                    # Send alert to stop communication
+                    record_alert = Alert()
+                    record_alert.level = "fatal"
+                    record_alert.description = "protocol_version"
+                    conn.send_list(conn_dtls.encode(record_alert))
+                    conn.close()
                     return detected_ciphers
 
                 if not conn_dtls.is_empty():
@@ -289,6 +294,12 @@ class BaseScan(BaseModule):
                 try:
                     conn_dtls.decode(data)
                 except WrongProtocolVersion:
+                    # Send alert to stop communication
+                    record_alert = Alert()
+                    record_alert.level = "fatal"
+                    record_alert.description = "protocol_version"
+                    conn.send_list(conn_dtls.encode(record_alert))
+                    conn.close()
                     return detected_ciphers
 
                 while not conn_dtls.is_empty():
