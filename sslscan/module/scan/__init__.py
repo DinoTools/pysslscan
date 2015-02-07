@@ -387,7 +387,13 @@ class BaseScan(BaseModule):
 
                 try:
                     conn_tls.decode(data)
-                except WrongProtocolVersion as e:
+                except WrongProtocolVersion:
+                    # Send alert and close socket
+                    record_alert = Alert()
+                    record_alert.level = "fatal"
+                    record_alert.description = "protocol_version"
+                    conn.send_list(conn_tls.encode(record_alert))
+                    conn.close()
                     return detected_ciphers
 
                 while not conn_tls.is_empty():
