@@ -11,7 +11,7 @@ import flextls
 from flextls.exception import NotEnoughData
 from flextls.protocol.handshake import Handshake, ServerHello, ServerHelloDone
 from flextls.protocol.handshake.extension import Extension, Heartbeat as HeartbeatExtension
-from flextls.protocol.record import RecordSSLv3
+from flextls.protocol.record import SSLv3Record
 from flextls.protocol.heartbeat import Heartbeat
 from flextls.protocol.alert import Alert
 
@@ -63,7 +63,7 @@ class VulnerabilityHeartbleed(BaseScan):
             data += tmp_data
             while True:
                 try:
-                    (record, data) = RecordSSLv3.decode(data)
+                    (record, data) = SSLv3Record.decode(data)
                 except NotEnoughData:
                     break
 
@@ -91,7 +91,7 @@ class VulnerabilityHeartbleed(BaseScan):
         elif protocol_version == flextls.registry.version.TLSv12:
             ver_minor = 3
 
-        record = RecordSSLv3()
+        record = SSLv3Record()
         record.version.major = 3
         record.version.minor = ver_minor
 
@@ -116,7 +116,7 @@ class VulnerabilityHeartbleed(BaseScan):
             data += tmp_data
             while True:
                 try:
-                    (record, data) = RecordSSLv3.decode(
+                    (record, data) = SSLv3Record.decode(
                         data,
                         payload_auto_decode=False
                     )

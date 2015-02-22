@@ -7,7 +7,7 @@ from flextls.field import SSLv2CipherSuiteField
 from flextls.protocol.handshake import ClientHello, Handshake, ServerHello
 from flextls.protocol.handshake import SSLv2ClientHello, SSLv2ServerHello
 from flextls.protocol.handshake.extension import EllipticCurves, SignatureAlgorithms, Extension, SessionTicketTLS
-from flextls.protocol.record import RecordSSLv2, RecordSSLv3
+from flextls.protocol.record import SSLv2Record, SSLv3Record
 
 from sslscan import modules
 from sslscan.exception import Timeout

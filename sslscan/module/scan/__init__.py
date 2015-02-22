@@ -2,6 +2,7 @@ from datetime import datetime
 import os
 
 import flextls
+from flextls.connection import DTLSv10Connection, SSLv30Connection
 from flextls.exception import NotEnoughData, WrongProtocolVersion
 from flextls.field import CipherSuiteField, CompressionMethodField
 from flextls.field import SSLv2CipherSuiteField
@@ -11,7 +12,7 @@ from flextls.protocol.handshake import DTLSv10ClientHello, DTLSv10Handshake, DTL
 from flextls.protocol.handshake import SSLv2ClientHello, SSLv2ServerHello
 from flextls.protocol.handshake.extension import EllipticCurves, SignatureAlgorithms, Extension, SessionTicketTLS
 from flextls.protocol.handshake.extension import ServerNameIndication, Heartbeat as HeartbeatExt, EcPointFormats
-from flextls.protocol.record import RecordSSLv2
+from flextls.protocol.record import SSLv2Record
 from flextls.protocol.alert import Alert
 import six
 
@@ -95,7 +96,7 @@ class BaseScan(BaseModule):
         hb_ext.mode = 1
         hello.extensions.append(Extension() + hb_ext)
 
-        hello.random.random_bytes = os.urandom(32)
+        hello.random = os.urandom(32)
         hello.version.major = ver_major
         hello.version.minor = ver_minor
         msg_handshake = DTLSv10Handshake()
@@ -153,7 +154,7 @@ class BaseScan(BaseModule):
 
         hello.extensions.append(Extension() + SessionTicketTLS())
 
-        hello.random.random_bytes = os.urandom(32)
+        hello.random = os.urandom(32)
         hello.version.major = ver_major
         hello.version.minor = ver_minor
         msg_handshake = Handshake()
@@ -179,7 +180,7 @@ class BaseScan(BaseModule):
             cipher.value = i
             hello.cipher_suites.append(cipher)
 
-        msg_hello = RecordSSLv2() + hello
+        msg_hello = SSLv2Record() + hello
 
         conn.send(msg_hello.encode())
 
@@ -199,7 +200,7 @@ class BaseScan(BaseModule):
             data += tmp_data
 
             try:
-                (record, data) = RecordSSLv2.decode(data)
+                (record, data) = SSLv2Record.decode(data)
             except NotEnoughData:
                 continue
 
@@ -224,12 +225,11 @@ class BaseScan(BaseModule):
 
         detected_ciphers = []
         count = 0
-        from flextls import BaseDTLSConnection
 
         while True:
             conn = self._scanner.handler.connect()
             conn.settimeout(2.0)
-            conn_dtls = BaseDTLSConnection(protocol_version=protocol_version)
+            conn_dtls = DTLSv10Connection(protocol_version=protocol_version)
 
             record_handshake = self._build_dtls_base_client_hello(
                 protocol_version,
@@ -357,7 +357,7 @@ class BaseScan(BaseModule):
             conn = self._scanner.handler.connect()
             conn.settimeout(2.0)
 
-            conn_tls = flextls.TLSv10Connection(
+            conn_tls = SSLv30Connection(
                 protocol_version=protocol_version
             )
 

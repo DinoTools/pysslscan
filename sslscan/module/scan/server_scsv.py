@@ -6,7 +6,7 @@ from sslscan.module.scan import BaseScan
 import flextls
 from flextls.exception import NotEnoughData
 from flextls.protocol.handshake import Handshake, ServerHello
-from flextls.protocol.record import RecordSSLv3
+from flextls.protocol.record import SSLv3Record
 from flextls.protocol.alert import Alert
 import six
 
@@ -60,7 +60,7 @@ class ServerSCSV(BaseScan):
             data += tmp_data
             while True:
                 try:
-                    (record, data) = RecordSSLv3.decode(data)
+                    (record, data) = SSLv3Record.decode(data)
                 except NotEnoughData:
                     break
 
