@@ -333,6 +333,16 @@ class BaseScan(BaseModule):
                 )
                 kb.set("server.session.compression", comp_method)
 
+            for extension in server_hello.extensions:
+                if isinstance(extension.payload, EcPointFormats):
+                    tmp_formats = []
+                    for format_id in extension.payload.point_format_list:
+                        tmp_format = flextls.registry.ec.point_formats.get(format_id.value)
+                        tmp_formats.append(tmp_format)
+
+                    if kb.get("server.ec.point_formats") is None:
+                        kb.set("server.ec.point_formats", tmp_formats)
+
             detected_ciphers.append(server_hello.cipher_suite)
             cipher_suites.remove(server_hello.cipher_suite)
             count = count + 1
@@ -421,6 +431,16 @@ class BaseScan(BaseModule):
                     server_hello.compression_method
                 )
                 kb.set("server.session.compression", comp_method)
+
+            for extension in server_hello.extensions:
+                if isinstance(extension.payload, EcPointFormats):
+                    tmp_formats = []
+                    for format_id in extension.payload.point_format_list:
+                        tmp_format = flextls.registry.ec.point_formats.get(format_id.value)
+                        tmp_formats.append(tmp_format)
+
+                    if kb.get("server.ec.point_formats") is None:
+                        kb.set("server.ec.point_formats", tmp_formats)
 
             detected_ciphers.append(server_hello.cipher_suite)
             cipher_suites.remove(server_hello.cipher_suite)
