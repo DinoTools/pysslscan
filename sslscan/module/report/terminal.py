@@ -302,6 +302,19 @@ class Terminal(BaseReport):
         )
         print("")
 
+    def _print_server_elliptic_curves(self, kb):
+        point_formats = kb.get("server.ec.point_formats")
+        if point_formats is not None:
+            print("EC Pointer Format(s):")
+            for point_format in point_formats:
+                print(
+                    "  {1}{0}{2}".format(
+                        point_format.name,
+                        "",
+                        self.color.RESET
+                    )
+                )
+
     def _print_server_preferred_ciphers(self, kb):
         ciphers = kb.get("server.preferred_ciphers")
         if ciphers is None:
@@ -440,6 +453,8 @@ class Terminal(BaseReport):
         self._print_server_session(kb)
 
         self._print_host_renegotiation(kb)
+
+        self._print_server_elliptic_curves(kb)
 
         self._print_custom(kb, "server.custom")
         self._print_custom(kb, "vulnerability.custom")
