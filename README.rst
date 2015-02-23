@@ -30,6 +30,7 @@ Features
   * Supported ciphers
   * Ciphers preferred
   * Supported compression methods
+  * Extract EC Point Formats
   * Server certificate (requires pyOpenSSL)
   * Test renegotiation (requires pyOpenSSL)
   * Detect vulnerabilities
