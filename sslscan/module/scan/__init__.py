@@ -141,6 +141,15 @@ class BaseScan(BaseModule):
 
         hello.extensions.append(Extension() + ext_elliptic_curves)
 
+        ext_ec_point_formats = EcPointFormats()
+        a = ext_ec_point_formats.get_field("point_format_list")
+        for i in [0, 1, 2]:
+            v = a.item_class("unnamed", None)
+            v.value = i
+            a.value.append(v)
+
+        hello.extensions.append(Extension() + ext_ec_point_formats)
+
         ext_signature_algorithm = SignatureAlgorithms()
         a = ext_signature_algorithm.get_field("supported_signature_algorithms")
         for i in hash_algorithms:
