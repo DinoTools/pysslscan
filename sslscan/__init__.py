@@ -19,7 +19,7 @@ from sslscan.config import ScanConfig
 from sslscan.exception import ModuleNotFound
 from sslscan.kb import KnowledgeBase
 from sslscan.module.handler import BaseHandler
-from sslscan.module.rating import BaseRating, NoneRating
+from sslscan.module.rating import BaseRating
 from sslscan.module.report import BaseReport
 from sslscan.module.scan import BaseScan
 
@@ -213,7 +213,9 @@ class Scanner(object):
 
         module = self._module_manager.get(name, base_class=BaseRating)
         if module is None:
-            return NoneRating()
+            if name == "none":
+                raise Exception("Internal error unable to load 'none' rating")
+            return self.load_rating("none")
         return module(scanner=self)
 
     def reset_knowledge_base(self):

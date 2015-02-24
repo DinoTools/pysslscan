@@ -25,13 +25,6 @@ class BaseRating(BaseModule):
         return rule.rate(value, item, kb)
 
 
-class NoneRating(BaseRating):
-    name="none"
-
-    def __init__(self, **kwargs):
-        BaseModule.__init__(self, **kwargs)
-
-
 class RatingRule(object):
     def __init__(self, name, description="", result_descriptions=None,
             result_refs=None, rules=[]):
