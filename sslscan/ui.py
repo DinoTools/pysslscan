@@ -5,7 +5,7 @@ import textwrap
 
 
 from sslscan import __version__, modules, Scanner
-from sslscan.exception import ModuleNotFound, OptionValueError
+from sslscan.exception import ConfigOptionNotFound, ModuleNotFound, OptionValueError
 from sslscan.module.handler import BaseHandler
 from sslscan.module.report import BaseReport
 from sslscan.module.rating import BaseRating
@@ -201,6 +201,13 @@ def run_scan(args):
         except ModuleNotFound as e:
             logger.error("Scan module '%s' not found", e.name)
             return 1
+        except ConfigOptionNotFound as e:
+            logger.error(
+                "Unrecognised command line option '%s' for scan module '%s'.",
+                e.name,
+                name
+            )
+            return 1
 
     for module in args.report:
         name, sep, options = module.partition(":")
@@ -217,6 +224,13 @@ def run_scan(args):
                     e.option.name,
                     e.value
                 )
+            )
+            return 1
+        except ConfigOptionNotFound as e:
+            logger.error(
+                "Unrecognised command line option '%s' for report module '%s'.",
+                e.name,
+                name
             )
             return 1
 
