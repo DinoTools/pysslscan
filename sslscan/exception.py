@@ -11,6 +11,18 @@ class BaseConfigError(Exception):
     pass
 
 
+class ConfigOptionNotFound(BaseConfigError):
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def __str__(self):
+        s = "Option with name '{0}' does not exist.".format(
+            self.name
+        )
+        return s
+
+
 class OptionValueError(BaseConfigError):
     def __init__(self, option, value):
         self.option = option

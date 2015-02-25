@@ -4,7 +4,7 @@ A collection of classes to handle the configuration of a scanner or a module.
 
 import logging
 
-from sslscan.exception import OptionValueError
+from sslscan.exception import ConfigOptionNotFound, OptionValueError
 
 
 logger = logging.getLogger(__name__)
@@ -130,7 +130,10 @@ class BaseConfig(object):
         logger.debug("Set value '%s' to '%r'", name, value)
         option = self._option_map.get(name, None)
         if option is None:
-            return False
+            raise ConfigOptionNotFound(
+                name=name,
+                value=value,
+            )
 
         negate = False
         if type(option) == str:
@@ -138,7 +141,10 @@ class BaseConfig(object):
             negate = True
 
         if option is None:
-            return False
+            raise ConfigOptionNotFound(
+                name=name,
+                value=value,
+            )
 
         value = option.convert_value_type(value)
         if option.type == "bool" and negate is True:
@@ -170,7 +176,10 @@ class BaseConfig(object):
                     option = self._option_map.get(option, None)
 
                 if option is None:
-                    return False
+                    raise ConfigOptionNotFound(
+                        name=name,
+                        value=value,
+                    )
 
                 if option.type == "bool" and sep == "":
                     value = not negation
