@@ -166,10 +166,6 @@ def run_scan(args):
         logger.error("No scan module specified")
         return 1
 
-    if len(args.report) == 0:
-        logger.error("No report module specified")
-        return 1
-
     enabled_ssl_method_found = False
     for name in ["ssl2", "ssl3", "tls10", "tls11", "tls12"]:
         if scanner.config.get_value(name):
@@ -209,7 +205,15 @@ def run_scan(args):
             )
             return 1
 
-    for module in args.report:
+    reports = args.report
+    if len(reports) == 0:
+        default_report = "term:rating=builtin.0_5"
+        logger.debug(
+            "No report module specified. Using: %s" % default_report
+        )
+        reports.append(default_report)
+
+    for module in reports:
         name, sep, options = module.partition(":")
         try:
             scanner.append_load(name, options, base_class=BaseReport)
