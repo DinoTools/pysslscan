@@ -303,6 +303,27 @@ class Terminal(BaseReport):
         print("")
 
     def _print_server_elliptic_curves(self, kb):
+        curves = kb.get("server.ec.named_curves")
+        if curves is not None:
+            print("EC Named Curve(s):")
+            for curve in curves:
+                rating_protocol_version = self._rating.rate(
+                    'ec.protocol_version',
+                    curve.protocol_version,
+                    curve
+                )
+                rating_name = self._rating.rate('ec.name', curve.elliptic_curve.name, curve)
+                print(
+                    "  {2}{0:7}{4} {3}{1}{4}".format(
+                        curve.protocol_version_name,
+                        curve.elliptic_curve.name,
+                        helper.rating2color(self.color, rating_protocol_version),
+                        helper.rating2color(self.color, rating_name),
+                        self.color.RESET
+                    )
+                )
+            print("")
+
         point_formats = kb.get("server.ec.point_formats")
         if point_formats is not None:
             print("EC Pointer Format(s):")
@@ -314,6 +335,7 @@ class Terminal(BaseReport):
                         self.color.RESET
                     )
                 )
+            print("")
 
     def _print_server_preferred_ciphers(self, kb):
         ciphers = kb.get("server.preferred_ciphers")
