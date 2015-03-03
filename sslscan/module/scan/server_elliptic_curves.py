@@ -9,7 +9,7 @@ from sslscan.module.scan import BaseScan
 
 class EllipticCurves(BaseScan):
     """
-    Test a server for provided ciphers.
+    Scan for supported elliptic curves.
     """
 
     name = "server.elliptic_curves"
