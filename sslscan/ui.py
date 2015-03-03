@@ -14,9 +14,11 @@ from sslscan.module.scan import BaseScan
 
 logger = logging.getLogger(__name__)
 
+
 def load_modules():
     global modules
     modules.load_global_modules()
+
 
 def print_module_info(args):
     load_modules()
@@ -104,10 +106,10 @@ def print_module_info(args):
                 )
             )
 
-
     print("")
 
     return 0
+
 
 def print_module_list(args):
     load_modules()
@@ -136,6 +138,7 @@ def print_module_list(args):
         print("{0} - {1}".format(name, text))
 
     return 0
+
 
 def run_scan(args):
     load_modules()
@@ -245,6 +248,7 @@ def run_scan(args):
         scanner.run()
 
     return 0
+
 
 def run():
     logging.basicConfig(
@@ -549,7 +553,7 @@ def run():
 
     # no subcommand given, print help and exit
     func = getattr(args, "func", None)
-    if func == None:
+    if func is None:
         parser.print_help()
         sys.exit(1)
 
