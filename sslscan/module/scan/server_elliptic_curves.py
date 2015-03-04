@@ -30,7 +30,7 @@ class EllipticCurves(BaseScan):
 
             elliptic_curves = flextls.registry.ec.named_curves[:]
             try:
-                detected_elliptic_curves = self._scan_elliptic_curves_tls(
+                detected_elliptic_curves = self._scan_elliptic_curves(
                     protocol_version,
                     cipher_suites,
                     elliptic_curves=elliptic_curves
