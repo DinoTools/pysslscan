@@ -35,6 +35,7 @@ class KnowledgeBase(object):
             "client.custom": [],
             "server.ciphers": [],
             "server.custom": [],
+            "server.ec.named_curves": [],
             "server.preferred_ciphers": [],
         }
         self._items = {}
@@ -143,6 +144,21 @@ class CipherResult(object):
         if self.status > 0:
             return "accepted"
         return "unknown"
+
+
+class ECResult(object):
+    """
+    This class is used to store all information for a elliptic curve.
+    """
+
+    def __init__(self, protocol_version, elliptic_curve):
+        self.protocol_version = protocol_version
+        self.elliptic_curve = elliptic_curve
+
+    @property
+    def protocol_version_name(self):
+        return flextls.helper.get_version_name(self.protocol_version)
+
 
 class BaseResult(object):
     """Base class for custom results."""

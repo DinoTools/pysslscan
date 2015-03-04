@@ -7,7 +7,9 @@ from flextls.exception import NotEnoughData, WrongProtocolVersion
 from flextls.field import CipherSuiteField, CompressionMethodField
 from flextls.field import SSLv2CipherSuiteField
 from flextls.field import ServerNameField, HostNameField
-from flextls.protocol.handshake import ClientHello, Handshake, ServerHello, ServerCertificate
+from flextls.field import ServerECDHParamsField, ECParametersNamedCurveField
+from flextls.protocol.handshake import ClientHello, Handshake, ServerHello, ServerCertificate, ServerKeyExchange
+from flextls.protocol.handshake import ServerKeyExchangeECDSA
 from flextls.protocol.handshake import DTLSv10ClientHello, DTLSv10Handshake, DTLSv10HelloVerifyRequest
 from flextls.protocol.handshake import SSLv2ClientHello, SSLv2ServerHello
 from flextls.protocol.handshake.extension import EllipticCurves, SignatureAlgorithms, Extension, SessionTicketTLS
@@ -35,7 +37,7 @@ class BaseScan(BaseModule):
     def __init__(self, **kwargs):
         BaseModule.__init__(self, **kwargs)
 
-    def _build_dtls_base_client_hello(self, protocol_version, cipher_suites):
+    def _build_dtls_base_client_hello(self, protocol_version, cipher_suites, elliptic_curves=None):
         ver_major, ver_minor = flextls.helper.get_tls_version(protocol_version)
 
         hash_algorithms = flextls.registry.tls.hash_algorithms.get_ids()
@@ -64,7 +66,9 @@ class BaseScan(BaseModule):
 
         ext_elliptic_curves = EllipticCurves()
         a = ext_elliptic_curves.get_field("elliptic_curve_list")
-        for i in flextls.registry.ec.named_curves.get_ids():
+        if elliptic_curves is None:
+            elliptic_curves = flextls.registry.ec.named_curves.get_ids()
+        for i in elliptic_curves:
             v = a.item_class("unnamed", None)
             v.value = i
             a.value.append(v)
@@ -103,7 +107,7 @@ class BaseScan(BaseModule):
 
         return msg_handshake
 
-    def _build_tls_base_client_hello(self, protocol_version, cipher_suites):
+    def _build_tls_base_client_hello(self, protocol_version, cipher_suites, elliptic_curves=None):
 
         ver_major, ver_minor = flextls.helper.get_tls_version(protocol_version)
 
@@ -133,7 +137,9 @@ class BaseScan(BaseModule):
 
         ext_elliptic_curves = EllipticCurves()
         a = ext_elliptic_curves.get_field("elliptic_curve_list")
-        for i in flextls.registry.ec.named_curves.get_ids():
+        if elliptic_curves is None:
+            elliptic_curves = flextls.registry.ec.named_curves.get_ids()
+        for i in elliptic_curves:
             v = a.item_class("unnamed", None)
             v.value = i
             a.value.append(v)
@@ -456,6 +462,261 @@ class BaseScan(BaseModule):
                 break
 
         return detected_ciphers
+
+    def _scan_elliptic_curves(self, protocol_version, cipher_suites, elliptic_curves, limit=False):
+        if protocol_version & flextls.registry.version.DTLS != 0:
+            return self._scan_elliptic_curves_dtls(protocol_version, cipher_suites, elliptic_curves, limit=limit)
+
+        return self._scan_elliptic_curves_tls(protocol_version, cipher_suites, elliptic_curves, limit=limit)
+
+    def _scan_elliptic_curves_dtls(self, protocol_version, cipher_suites, elliptic_curves, limit=False):
+        """
+        Scan for supported elliptic curves
+
+        :param protocol_version:
+        :param cipher_suites: List of cipher suites.
+        :param elliptic_curves: List of elliptic curves
+        :param limit:
+        :return: List of supported elliptic curve IDs
+        """
+        # Get IDs of allowed cipher suites
+        tmp = []
+        for cipher_suite in cipher_suites:
+            if cipher_suite.dtls is True:
+                tmp.append(cipher_suite.id)
+        cipher_suites = tmp
+
+        tmp = []
+        for elliptic_curve in elliptic_curves:
+            tmp.append(elliptic_curve.id)
+        elliptic_curves = tmp
+
+        detected_elliptic_curves = []
+        count = 0
+
+        while True:
+            conn = self._scanner.handler.connect()
+            conn.settimeout(2.0)
+            conn_dtls = DTLSv10Connection(
+                protocol_version=protocol_version
+            )
+
+            record_handshake = self._build_dtls_base_client_hello(
+                protocol_version,
+                cipher_suites,
+                elliptic_curves=elliptic_curves
+            )
+
+            conn.send_list(conn_dtls.encode(record_handshake))
+            time_start = datetime.now()
+            verify_request = None
+
+            while verify_request is None:
+                tmp_time = datetime.now() - time_start
+                if tmp_time.total_seconds() > 5.0:
+                    return detected_elliptic_curves
+
+                try:
+                    data = conn.recv(4096)
+                except ConnectionError:
+                    return detected_elliptic_curves
+
+                try:
+                    conn_dtls.decode(data)
+                except WrongProtocolVersion:
+                    # Send alert to stop communication
+                    record_alert = Alert()
+                    record_alert.level = "fatal"
+                    record_alert.description = "protocol_version"
+                    conn.send_list(conn_dtls.encode(record_alert))
+                    conn.close()
+                    return detected_elliptic_curves
+
+                if not conn_dtls.is_empty():
+                    record = conn_dtls.pop_record()
+                    if isinstance(record, DTLSv10Handshake):
+                        if isinstance(record.payload, DTLSv10HelloVerifyRequest):
+                            verify_request = record.payload
+                            break
+                    elif isinstance(record, Alert):
+                        if record.level == 2:
+                            conn.close()
+                            return detected_elliptic_curves
+
+            if verify_request is None:
+                return detected_elliptic_curves
+
+            record_handshake.payload.cookie = verify_request.cookie
+            conn.send_list(conn_dtls.encode(record_handshake))
+
+            time_start = datetime.now()
+            server_key_exchange = None
+            while server_key_exchange is None:
+                tmp_time = datetime.now() - time_start
+                if tmp_time.total_seconds() > 5.0:
+                    return detected_elliptic_curves
+
+                try:
+                    data = conn.recv(4096)
+                except ConnectionError:
+                    return detected_elliptic_curves
+
+                try:
+                    conn_dtls.decode(data)
+                except WrongProtocolVersion:
+                    # Send alert to stop communication
+                    record_alert = Alert()
+                    record_alert.level = "fatal"
+                    record_alert.description = "protocol_version"
+                    conn.send_list(conn_dtls.encode(record_alert))
+                    conn.close()
+                    return detected_elliptic_curves
+
+                while not conn_dtls.is_empty():
+                    record = conn_dtls.pop_record()
+
+                    if isinstance(record, DTLSv10Handshake):
+                        if isinstance(record.payload, ServerKeyExchange):
+                            server_key_exchange = record.payload
+
+                    elif isinstance(record, Alert):
+                        if record.level == 2:
+                            return detected_elliptic_curves
+
+            record_alert = Alert()
+            record_alert.level = 1
+            record_alert.description = 0
+            conn.send_list(conn_dtls.encode(record_alert))
+            conn.close()
+            if server_key_exchange is None:
+                break
+
+            # try to extract the ec id
+            tmp_ec_id = None
+            if isinstance(server_key_exchange.payload, ServerKeyExchangeECDSA):
+                tmp_params = server_key_exchange.payload.params
+                if isinstance(tmp_params, ServerECDHParamsField):
+                    if isinstance(tmp_params.curve_params, ECParametersNamedCurveField):
+                        tmp_ec_id = tmp_params.curve_params.namedcurve
+
+            if tmp_ec_id is None:
+                return detected_elliptic_curves
+
+            # stop if we get an unexpected ec id
+            if tmp_ec_id not in elliptic_curves:
+                return detected_elliptic_curves
+            detected_elliptic_curves.append(tmp_ec_id)
+            elliptic_curves.remove(tmp_ec_id)
+
+            count += 1
+            if limit is not False and limit <= count:
+                break
+
+        return detected_elliptic_curves
+
+    def _scan_elliptic_curves_tls(self, protocol_version, cipher_suites, elliptic_curves, limit=False):
+        """
+        Scan for supported elliptic curves
+
+        :param protocol_version:
+        :param cipher_suites: List of cipher suites.
+        :param elliptic_curves: List of elliptic curves
+        :param limit:
+        :return: List of supported elliptic curve IDs
+        """
+        # Get IDs of allowed cipher suites
+        tmp = []
+        for cipher_suite in cipher_suites:
+            tmp.append(cipher_suite.id)
+        cipher_suites = tmp
+
+        tmp = []
+        for elliptic_curve in elliptic_curves:
+            tmp.append(elliptic_curve.id)
+        elliptic_curves = tmp
+
+        detected_elliptic_curves = []
+        count = 0
+
+        while True:
+            conn = self._scanner.handler.connect()
+            conn.settimeout(2.0)
+
+            conn_tls = SSLv30Connection(
+                protocol_version=protocol_version
+            )
+
+            record_handshake = self._build_tls_base_client_hello(
+                protocol_version,
+                cipher_suites,
+                elliptic_curves=elliptic_curves
+            )
+
+            conn.send_list(conn_tls.encode(record_handshake))
+
+            time_start = datetime.now()
+            server_key_exchange = None
+
+            while server_key_exchange is None:
+                tmp_time = datetime.now() - time_start
+                if tmp_time.total_seconds() > 5.0:
+                    return detected_elliptic_curves
+
+                try:
+                    data = conn.recv(4096)
+                except ConnectionError:
+                    return detected_elliptic_curves
+                except socket.timeout:
+                    conn.close()
+                    return detected_elliptic_curves
+
+                try:
+                    conn_tls.decode(data)
+                except WrongProtocolVersion:
+                    # Send alert and close socket
+                    record_alert = Alert()
+                    record_alert.level = "fatal"
+                    record_alert.description = "protocol_version"
+                    conn.send_list(conn_tls.encode(record_alert))
+                    conn.close()
+                    return detected_elliptic_curves
+
+                while not conn_tls.is_empty():
+                    record = conn_tls.pop_record()
+                    if isinstance(record, Handshake):
+                        if isinstance(record.payload, ServerKeyExchange):
+                            server_key_exchange = record.payload
+                    elif isinstance(record, Alert):
+                        if record.level == 2:
+                            return detected_elliptic_curves
+
+            conn.close()
+            # stop if no ServerKeyExchange was sent
+            if server_key_exchange is None:
+                break
+
+            # try to extract the ec id
+            tmp_ec_id = None
+            if isinstance(server_key_exchange.payload, ServerKeyExchangeECDSA):
+                tmp_params = server_key_exchange.payload.params
+                if isinstance(tmp_params, ServerECDHParamsField):
+                    if isinstance(tmp_params.curve_params, ECParametersNamedCurveField):
+                        tmp_ec_id = tmp_params.curve_params.namedcurve
+
+            if tmp_ec_id is None:
+                return detected_elliptic_curves
+
+            # stop if we get an unexpected ec id
+            if tmp_ec_id not in elliptic_curves:
+                return detected_elliptic_curves
+            detected_elliptic_curves.append(tmp_ec_id)
+            elliptic_curves.remove(tmp_ec_id)
+
+            count += 1
+            if limit is not False and limit <= count:
+                break
+
+        return detected_elliptic_curves
 
 
 class BaseInfoScan(BaseScan):
