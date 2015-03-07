@@ -1,13 +1,17 @@
 Changelog
 =========
 
-0.5 - `master`_
-~~~~~~~~~~~~~~~
+0.5 - 2015-03-07
+~~~~~~~~~~~~~~~~
 
-.. note:: This version is not yet released and is under active development.
-
-* Add support to scan DTLS 1.0 enabled services
-* Add support to handle fragmentation on the record layer
+* Add support to scan DTLS 1.0 and DTLS 1.2 enabled services
+* Add support to handle fragmentation
+* Add support to enumerate elliptic curves
+* Add support to enumerate point formats
+* Add improved error handling for commandline parameters
+* Add support to handle connection state
+* Add support for LDAP and RDP
+* Load term module if no report module given
 
 0.4 - 2014-11-17
 ~~~~~~~~~~~~~~~~
