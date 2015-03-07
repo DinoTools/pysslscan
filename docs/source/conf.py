@@ -37,7 +37,22 @@ class Mock(object):
         else:
             return Mock()
 
-MOCK_MODULES = ['cffi', 'OpenSSL', 'six', 'six.moves.urllib.parse']
+MOCK_MODULES = [
+    'cffi',
+    'OpenSSL',
+    'six',
+    'six.moves.urllib.parse',
+    'flextls',
+    'flextls.connection',
+    'flextls.exception',
+    'flextls.field',
+    'flextls.helper',
+    'flextls.protocol',
+    'flextls.protocol.alert',
+    'flextls.protocol.handshake',
+    'flextls.protocol.handshake.extension',
+    'flextls.protocol.record',
+]
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = Mock()
 
