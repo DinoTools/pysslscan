@@ -5,8 +5,6 @@ import re
 
 from pprint import pformat
 
-import six
-
 from six.moves.urllib.parse import urlparse, parse_qs
 
 import flextls
