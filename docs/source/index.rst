@@ -21,6 +21,9 @@ Features
   * Supported ciphers
   * Ciphers preferred
   * Supported compression methods
+  * Supported elliptic curves
+  * Test support for Signaling Cipher Suite Value (SCSV)
+  * Extract EC Point Formats
   * Server certificate (requires pyOpenSSL)
   * Test renegotiation (requires pyOpenSSL)
   * Detect vulnerabilities

@@ -30,6 +30,8 @@ Features
   * Supported ciphers
   * Ciphers preferred
   * Supported compression methods
+  * Supported elliptic curves
+  * Test support for Signaling Cipher Suite Value (SCSV)
   * Extract EC Point Formats
   * Server certificate (requires pyOpenSSL)
   * Test renegotiation (requires pyOpenSSL)
@@ -53,7 +55,7 @@ Requirements:
 * Python 2.7 or Python >= 3.2
 * Python packages:
 
-  * flextls >= 0.3dev1
+  * flextls >= 0.3
   * six >= 1.4.1
 
 * Python packages(optional):
