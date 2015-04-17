@@ -38,7 +38,7 @@ class VulnerabilityHeartbleed(BaseScan):
 
         ext_hb = HeartbeatExtension()
         ext_hb.mode = 1
-        record_client_hello = record_tls.payload.payload
+        record_client_hello = record_tls.payload
         record_client_hello.extensions.append(Extension() + ext_hb)
 
         conn = self._scanner.handler.connect()
