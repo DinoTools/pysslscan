@@ -10,7 +10,7 @@ regex_banner = re.compile(b"\\+OK (?P<hostname>\S+) .*")
 
 class POP3(TCP):
     """
-    Handle IMAP-connections.
+    Handle POP3-connections.
     """
 
     name = "pop3"
