@@ -772,7 +772,7 @@ class BaseInfoScan(BaseScan):
             ctx.verify_mode = ssl.VERIFY_DEFAULT
             conn = self._scanner.handler.connect()
             conn_ssl = ctx.wrap_socket(
-                conn,
+                conn._socket,
                 server_hostname=self._scanner.handler.hostname.encode("utf-8")
             )
             return conn_ssl
@@ -799,7 +799,7 @@ class BaseInfoScan(BaseScan):
 
             ctx.set_cipher_list("ALL:COMPLEMENT")
             conn = self._scanner.handler.connect()
-            conn_ssl = SSL.Connection(ctx, conn)
+            conn_ssl = SSL.Connection(ctx, conn._socket)
             conn_ssl.set_tlsext_host_name(
                 self._scanner.handler.hostname.encode("utf-8")
             )
