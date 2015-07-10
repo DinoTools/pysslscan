@@ -46,7 +46,8 @@ class ServerRenegotiation(BaseScan):
             try:
                 conn_ssl.do_handshake()
             except Exception as e:
-                print(e)
+                # ToDo:
+                # print(e)
                 conn_ssl.close()
                 continue
 

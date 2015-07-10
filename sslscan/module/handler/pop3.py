@@ -57,7 +57,8 @@ class POP3(TCP):
         buf = conn.recv(4096)
         buf = buf.strip()
         # +OK Begin TLS negotiation now'
-        print(buf)
+        # ToDo:
+        # print(buf)
         if not buf.startswith(b"+OK Begin"):
             raise StartTLSError()
 
