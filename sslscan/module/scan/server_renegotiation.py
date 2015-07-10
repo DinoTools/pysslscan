@@ -38,7 +38,7 @@ class ServerRenegotiation(BaseScan):
             ctx.set_cipher_list("ALL:COMPLEMENT")
             ctx.set_options(_util.lib.SSL_OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION)
             conn = self._scanner.handler.connect()
-            conn_ssl = SSL.Connection(ctx, conn)
+            conn_ssl = SSL.Connection(ctx, conn._socket)
             conn_ssl.set_tlsext_host_name(
                 self._scanner.handler.hostname.encode("utf-8")
             )
