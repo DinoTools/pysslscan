@@ -1,6 +1,12 @@
 Changelog
 =========
 
+0.5.1 - 2015-07-13
+~~~~~~~~~~~~~~~~~~
+
+* Fix some errors (Thanks to Sjuul for testing)
+* Remove unused print()
+
 0.5 - 2015-03-07
 ~~~~~~~~~~~~~~~~
 
