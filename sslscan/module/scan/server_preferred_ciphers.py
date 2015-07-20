@@ -4,9 +4,9 @@ from sslscan import modules
 from sslscan.exception import Timeout
 from sslscan.kb import CipherResult
 from sslscan.module.scan import BaseScan
+from sslscan.module.scan.server_ciphers import ServerCiphers
 
-
-class ServerPreferredCiphers(BaseScan):
+class ServerPreferredCiphers(ServerCiphers):
     """
     Detect preferred server ciphers.
     """
@@ -15,7 +15,6 @@ class ServerPreferredCiphers(BaseScan):
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
-
 
     def run(self):
         kb = self._scanner.get_knowledge_base()

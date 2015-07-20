@@ -5,6 +5,7 @@ from sslscan.module.scan import BaseScan
 
 import flextls
 from flextls.exception import NotEnoughData
+from flextls.field import CipherSuiteField
 from flextls.protocol.handshake import Handshake, ServerHello
 from flextls.protocol.record import SSLv3Record
 from flextls.protocol.alert import Alert
@@ -26,58 +27,44 @@ class ServerSCSV(BaseScan):
         BaseScan.__init__(self, **kwargs)
 
     def _connect_with_scsv(self, protocol_version, cipher_suites):
-        cipher_suites = cipher_suites[:]
-        cipher_suites.append(0x5600)
+        def hook_cipher_suites(record):
+            cipher_suites = flextls.registry.tls.cipher_suites[:]
+            for cipher_suite in cipher_suites:
+                cipher = CipherSuiteField()
+                cipher.value = cipher_suite.id
+                record.payload.cipher_suites.append(cipher)
 
-        conn = self._scanner.handler.connect()
-        conn.settimeout(2.0)
+            cipher = CipherSuiteField()
+            cipher.value = 0x5600
+            record.payload.cipher_suites.append(cipher)
 
-        record_tls_hello = self._build_tls_base_client_hello(
+            return record
+
+        def stop_condition(record, records):
+            return isinstance(record, Handshake) and \
+                   isinstance(record.payload, ServerHello)
+
+        ver_major, ver_minor = flextls.helper.get_tls_version(protocol_version)
+
+        records = self.connect(
             protocol_version,
-            cipher_suites
+            stop_condition=stop_condition
         )
 
-        conn.send(record_tls_hello.encode())
+        if records is None:
+            return None
+            server_hello = None
 
-        time_start = datetime.now()
-        data = b""
-        proto_version = (
-            record_tls_hello.version.major,
-            record_tls_hello.version.minor
-        )
-        while True:
-            tmp_time = datetime.now() - time_start
-            if tmp_time.total_seconds() > 5.0:
-                conn.close()
-                return None
-
-            try:
-                tmp_data = conn.recv(4096)
-            except ConnectionError:
-                conn.close()
-                return None
-
-            data += tmp_data
-            while True:
-                try:
-                    (record, data) = SSLv3Record.decode(data)
-                except NotEnoughData:
-                    break
-
-                if isinstance(record.payload, Handshake):
-                    if isinstance(record.payload.payload, ServerHello):
-                        conn.close()
-                        if proto_version[0] == record.version.major \
-                            and proto_version[1] == record.version.minor:
-                            return False
-                        return None
-
-                elif isinstance(record.payload, Alert):
-                    conn.close()
-                    if record.payload.level == 2 and \
+        for record in records:
+            if isinstance(record, Handshake):
+                if isinstance(record.payload, ServerHello):
+                    if record.version.major == ver_major and \
+                            record.version.minor == ver_minor:
+                        return False
+            elif isinstance(record.payload, Alert):
+                if record.payload.level == 2 and \
                         record.payload.description == 86:
-                            return True
-                    return None
+                    return True
 
     def run(self):
         kb = self._scanner.get_knowledge_base()

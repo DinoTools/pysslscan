@@ -1,4 +1,5 @@
 import flextls
+from flextls.protocol.handshake import Handshake, ServerHello, DTLSv10Handshake
 
 from sslscan import modules
 from sslscan.exception import Timeout
@@ -13,6 +14,10 @@ class ServerCompression(BaseScan):
     name = "server.compression"
 
     def run(self):
+        def stop_condition(record, records):
+            return isinstance(record, (Handshake, DTLSv10Handshake)) and \
+                isinstance(record.payload, ServerHello)
+
         kb = self._scanner.get_knowledge_base()
 
         if kb.get("server.session.compression") is not None:
@@ -25,12 +30,10 @@ class ServerCompression(BaseScan):
             if protocol_version == flextls.registry.version.SSLv2:
                 continue
             else:
-                cipher_suites = flextls.registry.tls.cipher_suites[:]
                 try:
-                    self._scan_cipher_suites(
+                    self.connect(
                         protocol_version,
-                        cipher_suites,
-                        limit=1
+                        stop_condition=stop_condition
                     )
                 except Timeout:
                     continue
