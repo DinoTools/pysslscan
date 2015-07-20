@@ -8,7 +8,7 @@ from flextls.field import CipherSuiteField, CompressionMethodField
 from flextls.field import SSLv2CipherSuiteField
 from flextls.field import ServerNameField, HostNameField
 from flextls.field import ServerECDHParamsField, ECParametersNamedCurveField
-from flextls.protocol.handshake import ClientHello, Handshake, ServerHello, ServerCertificate, ServerKeyExchange
+from flextls.protocol.handshake import ClientHello, Handshake, ServerHello, ServerCertificate, ServerKeyExchange, ServerHelloDone
 from flextls.protocol.handshake import ServerKeyExchangeECDSA
 from flextls.protocol.handshake import DTLSv10ClientHello, DTLSv10Handshake, DTLSv10HelloVerifyRequest
 from flextls.protocol.handshake import SSLv2ClientHello, SSLv2ServerHello
@@ -33,58 +33,293 @@ if six.PY2:
     ConnectionError = socket.error
 
 
+class BaseHookAction(object):
+    def __init__(self, func, func_args=None):
+        self.func = func
+        self.args = func_args
+
+    def __call__(self, *args, **kwargs):
+        if self.args:
+            tmp_args = dict(self.args.items())
+            tmp_args.update(kwargs)
+        else:
+            tmp_args = kwargs
+        return self.func(*args, **tmp_args)
+
+
+class BaseHook(object):
+    def __init__(self):
+        self._signals = {}
+
+    def call(self, **kwargs):
+        raise NotImplementedError
+
+    def connect(self, func, name=None, args=None):
+        if name is None:
+            # ToDo: better ways to do this?
+            name = os.urandom(10)
+        self._signals[name] = BaseHookAction(
+            func=func,
+            func_args=args
+        )
+
+    def remove(self):
+        pass
+
+
+class RecordHook(BaseHook):
+    def call(self, record, **kwargs):
+        for signal in self._signals.values():
+            tmp_record = signal(record, **kwargs)
+            if tmp_record:
+                record = tmp_record
+
+        return record
+
+
 class BaseScan(BaseModule):
     def __init__(self, **kwargs):
         BaseModule.__init__(self, **kwargs)
+        self.build_dtls_client_hello_hooks = RecordHook()
+        self.parse_dtls_server_records_hooks = RecordHook()
+        self.build_tls_client_hello_hooks = RecordHook()
+        self.parse_tls_server_records_hooks = RecordHook()
 
-    def _build_dtls_base_client_hello(self, protocol_version, cipher_suites, elliptic_curves=None):
-        ver_major, ver_minor = flextls.helper.get_tls_version(protocol_version)
+        self.build_dtls_client_hello_hooks.connect(
+            self._hook_dtls_client_hello_cipher_suites,
+            "cipher_suites"
+        )
+        self.build_dtls_client_hello_hooks.connect(
+            self._hook_dtls_client_hello_compression,
+            name="compression"
+        )
+        self.build_dtls_client_hello_hooks.connect(
+            self._hook_dtls_client_hello_ec_point_formats,
+            name="ec_point_formats"
+        )
+        self.build_dtls_client_hello_hooks.connect(
+            self._hook_dtls_client_hello_elliptic_curves,
+            name="elliptic_curves"
+        )
+        self.build_dtls_client_hello_hooks.connect(
+            self._hook_dtls_client_hello_heartbeat,
+            name="heartbeat"
+        )
+        self.build_dtls_client_hello_hooks.connect(
+            self._hook_dtls_client_hello_session_ticket,
+            "session_ticket"
+        )
+        self.build_dtls_client_hello_hooks.connect(
+            self._hook_dtls_client_hello_signature_algorithms,
+            name="signature_algorithms"
+        )
+        self.build_dtls_client_hello_hooks.connect(
+            self._hook_dtls_client_hello_sni,
+            name="sni"
+        )
 
-        hash_algorithms = flextls.registry.tls.hash_algorithms.get_ids()
-        sign_algorithms = flextls.registry.tls.signature_algorithms.get_ids()
+        self.parse_dtls_server_records_hooks.connect(
+            self._hook_parse_dtls_server_hello_certificate,
+            name="certificate"
+        )
+        self.parse_dtls_server_records_hooks.connect(
+            self._hook_parse_dtls_server_hello_compression,
+            name="compression"
+        )
+        self.parse_dtls_server_records_hooks.connect(
+            self._hook_parse_dtls_server_hello_point_formats,
+            name="point_formats"
+        )
+
+        self.build_tls_client_hello_hooks.connect(
+            self._hook_tls_client_hello_cipher_suites,
+            "cipher_suites"
+        )
+        self.build_tls_client_hello_hooks.connect(
+            self._hook_tls_client_hello_compression,
+            name="compression"
+        )
+        self.build_tls_client_hello_hooks.connect(
+            self._hook_tls_client_hello_ec_point_formats,
+            name="ec_point_formats"
+        )
+        self.build_tls_client_hello_hooks.connect(
+            self._hook_tls_client_hello_elliptic_curves,
+            name="elliptic_curves"
+        )
+        self.build_tls_client_hello_hooks.connect(
+            self._hook_tls_client_hello_heartbeat,
+            name="heartbeat"
+        )
+        self.build_tls_client_hello_hooks.connect(
+            self._hook_tls_client_hello_session_ticket,
+            "session_ticket"
+        )
+        self.build_tls_client_hello_hooks.connect(
+            self._hook_tls_client_hello_signature_algorithms,
+            name="signature_algorithms"
+        )
+        self.build_tls_client_hello_hooks.connect(
+            self._hook_tls_client_hello_sni,
+            name="sni"
+        )
+
+        self.parse_tls_server_records_hooks.connect(
+            self._hook_parse_tls_server_hello_certificate,
+            name="certificate"
+        )
+        self.parse_tls_server_records_hooks.connect(
+            self._hook_parse_tls_server_hello_compression,
+            name="compression"
+        )
+        self.parse_tls_server_records_hooks.connect(
+            self._hook_parse_tls_server_hello_point_formats,
+            name="point_formats"
+        )
+
+    def _hook_parse_dtls_server_hello_certificate(self, record):
+        kb = self._scanner.get_knowledge_base()
+        raw_cert = kb.get("server.certificate.raw")
+        if raw_cert is not None:
+            return
+
+        if not isinstance(record, DTLSv10Handshake) or not isinstance(record.payload, ServerCertificate):
+            return
+
+        raw_certs = []
+        for raw_cert in record.payload.certificate_list:
+            raw_certs.append(raw_cert.value)
+        kb.set("server.certificate.raw", raw_certs)
+
+    def _hook_parse_dtls_server_hello_compression(self, record):
+        # get compression method
+        kb = self._scanner.get_knowledge_base()
+        if kb.get("server.session.compression"):
+            return
+
+        if not (isinstance(record, DTLSv10Handshake) and isinstance(record.payload, ServerHello)):
+            return
+
+        comp_method = flextls.registry.tls.compression_methods.get(
+            record.payload.compression_method
+        )
+        kb.set("server.session.compression", comp_method)
+
+    def _hook_parse_dtls_server_hello_point_formats(self, record):
+        kb = self._scanner.get_knowledge_base()
+        if kb.get("server.ec.point_formats"):
+            return
+
+        if not (isinstance(record, DTLSv10Handshake) and isinstance(record.payload, ServerHello)):
+            return
+
+        for extension in record.payload.extensions:
+            if isinstance(extension.payload, EcPointFormats):
+                tmp_formats = []
+                for format_id in extension.payload.point_format_list:
+                    tmp_format = flextls.registry.ec.point_formats.get(format_id.value)
+                    tmp_formats.append(tmp_format)
+
+                kb.set("server.ec.point_formats", tmp_formats)
+                return
+
+    def _hook_parse_tls_server_hello_certificate(self, record):
+        kb = self._scanner.get_knowledge_base()
+        raw_cert = kb.get("server.certificate.raw")
+        if raw_cert is not None:
+            return
+
+        if not isinstance(record, Handshake) or not isinstance(record.payload, ServerCertificate):
+            return
+
+        raw_certs = []
+        for raw_cert in record.payload.certificate_list:
+            raw_certs.append(raw_cert.value)
+        kb.set("server.certificate.raw", raw_certs)
+
+    def _hook_parse_tls_server_hello_compression(self, record):
+        # get compression method
+        kb = self._scanner.get_knowledge_base()
+        if kb.get("server.session.compression"):
+            return
+
+        if not (isinstance(record, Handshake) and isinstance(record.payload, ServerHello)):
+            return
+
+        comp_method = flextls.registry.tls.compression_methods.get(
+            record.payload.compression_method
+        )
+        kb.set("server.session.compression", comp_method)
+
+    def _hook_parse_tls_server_hello_point_formats(self, record):
+        kb = self._scanner.get_knowledge_base()
+        if kb.get("server.ec.point_formats"):
+            return
+
+        if not (isinstance(record, Handshake) and isinstance(record.payload, ServerHello)):
+            return
+
+        for extension in record.payload.extensions:
+            if isinstance(extension.payload, EcPointFormats):
+                tmp_formats = []
+                for format_id in extension.payload.point_format_list:
+                    tmp_format = flextls.registry.ec.point_formats.get(format_id.value)
+                    tmp_formats.append(tmp_format)
+
+                kb.set("server.ec.point_formats", tmp_formats)
+                return
+
+    def _hook_dtls_client_hello_cipher_suites(self, record):
+        cipher_suites = flextls.registry.tls.cipher_suites[:]
+        for cipher_suite in cipher_suites:
+            if cipher_suite.dtls is True:
+                cipher = CipherSuiteField()
+                cipher.value = cipher_suite.id
+                record.payload.cipher_suites.append(cipher)
+        return record
+
+    def _hook_dtls_client_hello_compression(self, record):
         comp_methods = flextls.registry.tls.compression_methods.get_ids()
-
-        hello = DTLSv10ClientHello()
-
-        for i in cipher_suites:
-            cipher = CipherSuiteField()
-            cipher.value = i
-            hello.cipher_suites.append(cipher)
-
         for comp_id in comp_methods:
             comp = CompressionMethodField()
             comp.value = comp_id
-            hello.compression_methods.append(comp)
+            record.payload.compression_methods.append(comp)
+        return record
 
-        server_name = ServerNameField()
-        server_name.payload = HostNameField("")
-        server_name.payload.value = self._scanner.handler.hostname.encode("utf-8")
-        tmp_sni = ServerNameIndication()
-        tmp_sni.server_name_list.append(server_name)
-        tmp_ext_sni = Extension() + tmp_sni
-        hello.extensions.append(tmp_ext_sni)
-
-        ext_elliptic_curves = EllipticCurves()
-        a = ext_elliptic_curves.get_field("elliptic_curve_list")
-        if elliptic_curves is None:
-            elliptic_curves = flextls.registry.ec.named_curves.get_ids()
-        for i in elliptic_curves:
-            v = a.item_class("unnamed", None)
-            v.value = i
-            a.value.append(v)
-
-        hello.extensions.append(Extension() + ext_elliptic_curves)
-
+    def _hook_dtls_client_hello_ec_point_formats(self, record):
         ext_ec_point_formats = EcPointFormats()
         a = ext_ec_point_formats.get_field("point_format_list")
         for tmp_pf in flextls.registry.ec.point_formats:
             v = a.item_class("unnamed", tmp_pf.id)
             a.value.append(v)
 
-        hello.extensions.append(Extension() + ext_ec_point_formats)
+        record.payload.extensions.append(Extension() + ext_ec_point_formats)
+        return record
 
+    def _hook_dtls_client_hello_elliptic_curves(self, record):
+        ext_elliptic_curves = EllipticCurves()
+        a = ext_elliptic_curves.get_field("elliptic_curve_list")
+        elliptic_curves = flextls.registry.ec.named_curves.get_ids()
+        for i in elliptic_curves:
+            v = a.item_class("unnamed", None)
+            v.value = i
+            a.value.append(v)
+
+        record.payload.extensions.append(Extension() + ext_elliptic_curves)
+        return record
+
+    def _hook_dtls_client_hello_heartbeat(self, record):
+        hb_ext = HeartbeatExt()
+        hb_ext.mode = 1
+        record.payload.extensions.append(Extension() + hb_ext)
+        return record
+
+    def _hook_dtls_client_hello_signature_algorithms(self, record):
         ext_signature_algorithm = SignatureAlgorithms()
         a = ext_signature_algorithm.get_field("supported_signature_algorithms")
+
+        hash_algorithms = flextls.registry.tls.hash_algorithms.get_ids()
+        sign_algorithms = flextls.registry.tls.signature_algorithms.get_ids()
         for i in hash_algorithms:
             for j in sign_algorithms:
                 v = a.item_class("unnamed")
@@ -92,93 +327,124 @@ class BaseScan(BaseModule):
                 v.signature = j
                 a.value.append(v)
 
-        hello.extensions.append(Extension() + ext_signature_algorithm)
+        record.payload.extensions.append(Extension() + ext_signature_algorithm)
+        return record
 
-        hello.extensions.append(Extension() + SessionTicketTLS())
+    def _hook_dtls_client_hello_session_ticket(self, record):
+        record.payload.extensions.append(Extension() + SessionTicketTLS())
+        return record
+
+    def _hook_dtls_client_hello_sni(self, record):
+        server_name = ServerNameField()
+        server_name.payload = HostNameField("")
+        server_name.payload.value = self._scanner.handler.hostname.encode("utf-8")
+        tmp_sni = ServerNameIndication()
+        tmp_sni.server_name_list.append(server_name)
+        tmp_ext_sni = Extension() + tmp_sni
+        record.payload.extensions.append(tmp_ext_sni)
+
+        return record
+
+    def _hook_tls_client_hello_cipher_suites(self, record):
+        cipher_suites = flextls.registry.tls.cipher_suites[:]
+        for cipher_suite in cipher_suites:
+            cipher = CipherSuiteField()
+            cipher.value = cipher_suite.id
+            record.payload.cipher_suites.append(cipher)
+        return record
+
+    def _hook_tls_client_hello_compression(self, record):
+        comp_methods = flextls.registry.tls.compression_methods.get_ids()
+        for comp_id in comp_methods:
+            comp = CompressionMethodField()
+            comp.value = comp_id
+            record.payload.compression_methods.append(comp)
+        return record
+
+    def _hook_tls_client_hello_ec_point_formats(self, record):
+        ext_ec_point_formats = EcPointFormats()
+        a = ext_ec_point_formats.get_field("point_format_list")
+        for tmp_pf in flextls.registry.ec.point_formats:
+            v = a.item_class("unnamed", tmp_pf.id)
+            a.value.append(v)
+
+        record.payload.extensions.append(Extension() + ext_ec_point_formats)
+        return record
+
+    def _hook_tls_client_hello_elliptic_curves(self, record):
+        ext_elliptic_curves = EllipticCurves()
+        a = ext_elliptic_curves.get_field("elliptic_curve_list")
+        elliptic_curves = flextls.registry.ec.named_curves.get_ids()
+        for i in elliptic_curves:
+            v = a.item_class("unnamed", None)
+            v.value = i
+            a.value.append(v)
+
+        record.payload.extensions.append(Extension() + ext_elliptic_curves)
+        return record
+
+    def _hook_tls_client_hello_heartbeat(self, record):
         hb_ext = HeartbeatExt()
         hb_ext.mode = 1
-        hello.extensions.append(Extension() + hb_ext)
+        record.payload.extensions.append(Extension() + hb_ext)
+        return record
 
+    def _hook_tls_client_hello_session_ticket(self, record):
+        record.payload.extensions.append(Extension() + SessionTicketTLS())
+        return record
+
+    def _hook_tls_client_hello_signature_algorithms(self, record):
+        ext_signature_algorithm = SignatureAlgorithms()
+        a = ext_signature_algorithm.get_field("supported_signature_algorithms")
+
+        hash_algorithms = flextls.registry.tls.hash_algorithms.get_ids()
+        sign_algorithms = flextls.registry.tls.signature_algorithms.get_ids()
+        for i in hash_algorithms:
+            for j in sign_algorithms:
+                v = a.item_class("unnamed")
+                v.hash = i
+                v.signature = j
+                a.value.append(v)
+
+        record.payload.extensions.append(Extension() + ext_signature_algorithm)
+        return record
+
+    def _hook_tls_client_hello_sni(self, record):
+        server_name = ServerNameField()
+        server_name.payload = HostNameField("")
+        server_name.payload.value = self._scanner.handler.hostname.encode("utf-8")
+        tmp_sni = ServerNameIndication()
+        tmp_sni.server_name_list.append(server_name)
+        tmp_ext_sni = Extension() + tmp_sni
+        record.payload.extensions.append(tmp_ext_sni)
+
+        return record
+
+    def build_dtls_client_hello(self, protocol_version):
+        ver_major, ver_minor = flextls.helper.get_tls_version(protocol_version)
+
+        hello = DTLSv10ClientHello()
         hello.random = os.urandom(32)
         hello.version.major = ver_major
         hello.version.minor = ver_minor
+
         msg_handshake = DTLSv10Handshake()
         msg_handshake.set_payload(hello)
 
-        return msg_handshake
+        return self.build_dtls_client_hello_hooks.call(msg_handshake)
 
-    def _build_tls_base_client_hello(self, protocol_version, cipher_suites, elliptic_curves=None):
-
+    def build_tls_client_hello(self, protocol_version):
         ver_major, ver_minor = flextls.helper.get_tls_version(protocol_version)
 
-        hash_algorithms = flextls.registry.tls.hash_algorithms.get_ids()
-        sign_algorithms = flextls.registry.tls.signature_algorithms.get_ids()
-        comp_methods = flextls.registry.tls.compression_methods.get_ids()
-
         hello = ClientHello()
-
-        for i in cipher_suites:
-            cipher = CipherSuiteField()
-            cipher.value = i
-            hello.cipher_suites.append(cipher)
-
-        for comp_id in comp_methods:
-            comp = CompressionMethodField()
-            comp.value = comp_id
-            hello.compression_methods.append(comp)
-
-        server_name = ServerNameField()
-        server_name.payload = HostNameField("")
-        server_name.payload.value = self._scanner.handler.hostname.encode("utf-8")
-        tmp_sni = ServerNameIndication()
-        tmp_sni.server_name_list.append(server_name)
-        tmp_ext_sni = Extension() + tmp_sni
-        hello.extensions.append(tmp_ext_sni)
-
-        ext_elliptic_curves = EllipticCurves()
-        a = ext_elliptic_curves.get_field("elliptic_curve_list")
-        if elliptic_curves is None:
-            elliptic_curves = flextls.registry.ec.named_curves.get_ids()
-        for i in elliptic_curves:
-            v = a.item_class("unnamed", None)
-            v.value = i
-            a.value.append(v)
-
-        hello.extensions.append(Extension() + ext_elliptic_curves)
-
-        ext_ec_point_formats = EcPointFormats()
-        a = ext_ec_point_formats.get_field("point_format_list")
-        for tmp_pf in flextls.registry.ec.point_formats:
-            v = a.item_class("unnamed", tmp_pf.id)
-            a.value.append(v)
-
-        hello.extensions.append(Extension() + ext_ec_point_formats)
-
-        ext_signature_algorithm = SignatureAlgorithms()
-        a = ext_signature_algorithm.get_field("supported_signature_algorithms")
-        for i in hash_algorithms:
-            for j in sign_algorithms:
-                v = a.item_class("unnamed")
-                v.hash = i
-                v.signature = j
-                a.value.append(v)
-
-        hello.extensions.append(Extension() + ext_signature_algorithm)
-
-        hello.extensions.append(Extension() + SessionTicketTLS())
-
         hello.random = os.urandom(32)
         hello.version.major = ver_major
         hello.version.minor = ver_minor
+
         msg_handshake = Handshake()
         msg_handshake.set_payload(hello)
-        return msg_handshake
 
-    def _scan_cipher_suites(self, protocol_version, cipher_suites, limit=False):
-        if protocol_version & flextls.registry.version.DTLS != 0:
-            return self._scan_dtls_cipher_suites(protocol_version, cipher_suites, limit=limit)
-
-        return self._scan_tls_cipher_suites(protocol_version, cipher_suites, limit=limit)
+        return self.build_tls_client_hello_hooks.call(msg_handshake)
 
     def _scan_ssl2_cipher_suites(self, protocol_version, cipher_suites):
         conn = self._scanner.handler.connect()
@@ -226,497 +492,189 @@ class BaseScan(BaseModule):
         conn.close()
         return detected_ciphers
 
-    def _scan_dtls_cipher_suites(self, protocol_version, cipher_suites, limit=False):
-        kb = self._scanner.get_knowledge_base()
-
-        # Get IDs of allowed cipher suites
-        tmp = []
-        for cipher_suite in cipher_suites:
-            if cipher_suite.dtls is True:
-                tmp.append(cipher_suite.id)
-        cipher_suites = tmp
-
-        detected_ciphers = []
-        count = 0
-
-        while True:
-            conn = self._scanner.handler.connect()
-            conn.settimeout(2.0)
-            conn_dtls = DTLSv10Connection(protocol_version=protocol_version)
-
-            record_handshake = self._build_dtls_base_client_hello(
-                protocol_version,
-                cipher_suites
-            )
-
-            conn.send_list(conn_dtls.encode(record_handshake))
-            time_start = datetime.now()
-            verify_request = None
-
-            while verify_request is None:
-                tmp_time = datetime.now() - time_start
-                if tmp_time.total_seconds() > 5.0:
-                    return detected_ciphers
-
-                try:
-                    data = conn.recv(4096)
-                except ConnectionError:
-                    return detected_ciphers
-
-                try:
-                    conn_dtls.decode(data)
-                except WrongProtocolVersion:
-                    # Send alert to stop communication
-                    record_alert = Alert()
-                    record_alert.level = "fatal"
-                    record_alert.description = "protocol_version"
-                    conn.send_list(conn_dtls.encode(record_alert))
-                    conn.close()
-                    return detected_ciphers
-
-                if not conn_dtls.is_empty():
-                    record = conn_dtls.pop_record()
-                    if isinstance(record, DTLSv10Handshake):
-                        if isinstance(record.payload, DTLSv10HelloVerifyRequest):
-                            verify_request = record.payload
-                            break
-                    elif isinstance(record, Alert):
-                        if record.level == 2:
-                            conn.close()
-                            return detected_ciphers
-
-            if verify_request is None:
-                return
-
-            record_handshake.payload.cookie = verify_request.cookie
-            conn.send_list(conn_dtls.encode(record_handshake))
-
-            time_start = datetime.now()
-            server_hello = None
-            raw_certs = kb.get("server.certificate.raw")
-            while server_hello is None or raw_certs is None:
-                tmp_time = datetime.now() - time_start
-                if tmp_time.total_seconds() > 5.0:
-                    return detected_ciphers
-
-                try:
-                    data = conn.recv(4096)
-                except ConnectionError:
-                    return detected_ciphers
-
-                try:
-                    conn_dtls.decode(data)
-                except WrongProtocolVersion:
-                    # Send alert to stop communication
-                    record_alert = Alert()
-                    record_alert.level = "fatal"
-                    record_alert.description = "protocol_version"
-                    conn.send_list(conn_dtls.encode(record_alert))
-                    conn.close()
-                    return detected_ciphers
-
-                while not conn_dtls.is_empty():
-                    record = conn_dtls.pop_record()
-
-                    if isinstance(record, DTLSv10Handshake):
-                        if isinstance(record.payload, ServerHello):
-                            server_hello = record.payload
-                        if raw_certs is None and isinstance(record.payload, ServerCertificate):
-                            raw_certs = []
-                            for raw_cert in record.payload.certificate_list:
-                                raw_certs.append(raw_cert.value)
-                            kb.set("server.certificate.raw", raw_certs)
-
-                    elif isinstance(record, Alert):
-                        if record.level == 2:
-                            return detected_ciphers
-
-            record_alert = Alert()
-            record_alert.level = 1
-            record_alert.description = 0
-            conn.send_list(conn_dtls.encode(record_alert))
-            conn.close()
-            if server_hello is None:
-                break
-
-            # get compression method
-            if kb.get("server.session.compression") is None:
-                comp_method = flextls.registry.tls.compression_methods.get(
-                    server_hello.compression_method
-                )
-                kb.set("server.session.compression", comp_method)
-
-            for extension in server_hello.extensions:
-                if isinstance(extension.payload, EcPointFormats):
-                    tmp_formats = []
-                    for format_id in extension.payload.point_format_list:
-                        tmp_format = flextls.registry.ec.point_formats.get(format_id.value)
-                        tmp_formats.append(tmp_format)
-
-                    if kb.get("server.ec.point_formats") is None:
-                        kb.set("server.ec.point_formats", tmp_formats)
-
-            detected_ciphers.append(server_hello.cipher_suite)
-            cipher_suites.remove(server_hello.cipher_suite)
-            count = count + 1
-            if limit is not False and limit <= count:
-                break
-
-        return detected_ciphers
-
-    def _scan_tls_cipher_suites(self, protocol_version, cipher_suites, limit=False):
-        kb = self._scanner.get_knowledge_base()
-
-        # Get IDs of allowed cipher suites
-        tmp = []
-        for cipher_suite in cipher_suites:
-            tmp.append(cipher_suite.id)
-        cipher_suites = tmp
-
-        detected_ciphers = []
-        count = 0
-
-        while True:
-            conn = self._scanner.handler.connect()
-            conn.settimeout(2.0)
-
-            conn_tls = SSLv30Connection(
-                protocol_version=protocol_version
-            )
-
-            record_handshake = self._build_tls_base_client_hello(
-                protocol_version,
-                cipher_suites
-            )
-
-            conn.send_list(conn_tls.encode(record_handshake))
-
-            time_start = datetime.now()
-            server_hello = None
-
-            raw_certs = kb.get("server.certificate.raw")
-            while server_hello is None or raw_certs is None:
-                tmp_time = datetime.now() - time_start
-                if tmp_time.total_seconds() > 5.0:
-                    return detected_ciphers
-
-                try:
-                    data = conn.recv(4096)
-                except ConnectionError:
-                    return detected_ciphers
-                except socket.timeout:
-                    conn.close()
-                    return detected_ciphers
-
-                try:
-                    conn_tls.decode(data)
-                except WrongProtocolVersion:
-                    # Send alert and close socket
-                    record_alert = Alert()
-                    record_alert.level = "fatal"
-                    record_alert.description = "protocol_version"
-                    conn.send_list(conn_tls.encode(record_alert))
-                    conn.close()
-                    return detected_ciphers
-
-                while not conn_tls.is_empty():
-                    record = conn_tls.pop_record()
-
-                    if isinstance(record, Handshake):
-                        if isinstance(record.payload, ServerHello):
-                            server_hello = record.payload
-                        elif raw_certs is None and isinstance(record.payload, ServerCertificate):
-                            raw_certs = []
-                            for raw_cert in record.payload.certificate_list:
-                                raw_certs.append(raw_cert.value)
-                            kb.set("server.certificate.raw", raw_certs)
-                    elif isinstance(record, Alert):
-                        if record.level == 2:
-                            return detected_ciphers
-
-            conn.close()
-            if server_hello is None:
-                break
-
-            # get compression method
-            if kb.get("server.session.compression") is None:
-                comp_method = flextls.registry.tls.compression_methods.get(
-                    server_hello.compression_method
-                )
-                kb.set("server.session.compression", comp_method)
-
-            for extension in server_hello.extensions:
-                if isinstance(extension.payload, EcPointFormats):
-                    tmp_formats = []
-                    for format_id in extension.payload.point_format_list:
-                        tmp_format = flextls.registry.ec.point_formats.get(format_id.value)
-                        tmp_formats.append(tmp_format)
-
-                    if kb.get("server.ec.point_formats") is None:
-                        kb.set("server.ec.point_formats", tmp_formats)
-
-            detected_ciphers.append(server_hello.cipher_suite)
-            cipher_suites.remove(server_hello.cipher_suite)
-            count = count + 1
-            if limit is not False and limit <= count:
-                break
-
-        return detected_ciphers
-
-    def _scan_elliptic_curves(self, protocol_version, cipher_suites, elliptic_curves, limit=False):
+    def connect(self, protocol_version, stop_condition=None):
         if protocol_version & flextls.registry.version.DTLS != 0:
-            return self._scan_elliptic_curves_dtls(protocol_version, cipher_suites, elliptic_curves, limit=limit)
-
-        return self._scan_elliptic_curves_tls(protocol_version, cipher_suites, elliptic_curves, limit=limit)
-
-    def _scan_elliptic_curves_dtls(self, protocol_version, cipher_suites, elliptic_curves, limit=False):
-        """
-        Scan for supported elliptic curves
-
-        :param protocol_version:
-        :param cipher_suites: List of cipher suites.
-        :param elliptic_curves: List of elliptic curves
-        :param limit:
-        :return: List of supported elliptic curve IDs
-        """
-        # Get IDs of allowed cipher suites
-        tmp = []
-        for cipher_suite in cipher_suites:
-            if cipher_suite.dtls is True:
-                tmp.append(cipher_suite.id)
-        cipher_suites = tmp
-
-        tmp = []
-        for elliptic_curve in elliptic_curves:
-            tmp.append(elliptic_curve.id)
-        elliptic_curves = tmp
-
-        detected_elliptic_curves = []
-        count = 0
-
-        while True:
-            conn = self._scanner.handler.connect()
-            conn.settimeout(2.0)
-            conn_dtls = DTLSv10Connection(
-                protocol_version=protocol_version
-            )
-
-            record_handshake = self._build_dtls_base_client_hello(
+            return self.connect_dtls(
                 protocol_version,
-                cipher_suites,
-                elliptic_curves=elliptic_curves
+                stop_condition=stop_condition
             )
 
-            conn.send_list(conn_dtls.encode(record_handshake))
-            time_start = datetime.now()
-            verify_request = None
+        return self.connect_tls(
+            protocol_version,
+            stop_condition=stop_condition
+        )
 
-            while verify_request is None:
-                tmp_time = datetime.now() - time_start
-                if tmp_time.total_seconds() > 5.0:
-                    return detected_elliptic_curves
+    def connect_dtls(self, protocol_version, stop_condition=None):
+        def _default_stop_condition(record, records):
+            return isinstance(record, DTLSv10Handshake) and \
+                isinstance(record.payload, ServerHelloDone)
 
-                try:
-                    data = conn.recv(4096)
-                except ConnectionError:
-                    return detected_elliptic_curves
+        if stop_condition is None:
+            stop_condition = _default_stop_condition
 
-                try:
-                    conn_dtls.decode(data)
-                except WrongProtocolVersion:
-                    # Send alert to stop communication
-                    record_alert = Alert()
-                    record_alert.level = "fatal"
-                    record_alert.description = "protocol_version"
-                    conn.send_list(conn_dtls.encode(record_alert))
-                    conn.close()
-                    return detected_elliptic_curves
+        conn = self._scanner.handler.connect()
+        conn.settimeout(2.0)
 
-                if not conn_dtls.is_empty():
-                    record = conn_dtls.pop_record()
-                    if isinstance(record, DTLSv10Handshake):
-                        if isinstance(record.payload, DTLSv10HelloVerifyRequest):
-                            verify_request = record.payload
-                            break
-                    elif isinstance(record, Alert):
-                        if record.level == 2:
-                            conn.close()
-                            return detected_elliptic_curves
+        conn_dtls = DTLSv10Connection(
+            protocol_version=protocol_version
+        )
 
-            if verify_request is None:
-                return detected_elliptic_curves
+        record_handshake = self.build_dtls_client_hello(
+            protocol_version
+        )
 
-            record_handshake.payload.cookie = verify_request.cookie
-            conn.send_list(conn_dtls.encode(record_handshake))
+        conn.send_list(conn_dtls.encode(record_handshake))
+        time_start = datetime.now()
+        verify_request = None
+        records = []
+        while verify_request is None:
+            tmp_time = datetime.now() - time_start
+            if tmp_time.total_seconds() > 5.0:
+                return records
 
-            time_start = datetime.now()
-            server_key_exchange = None
-            while server_key_exchange is None:
-                tmp_time = datetime.now() - time_start
-                if tmp_time.total_seconds() > 5.0:
-                    return detected_elliptic_curves
+            try:
+                data = conn.recv(4096)
+            except ConnectionError:
+                return records
 
-                try:
-                    data = conn.recv(4096)
-                except ConnectionError:
-                    return detected_elliptic_curves
+            try:
+                conn_dtls.decode(data)
+            except WrongProtocolVersion:
+                # Send alert to stop communication
+                record_alert = Alert()
+                record_alert.level = "fatal"
+                record_alert.description = "protocol_version"
+                conn.send_list(conn_dtls.encode(record_alert))
+                conn.close()
+                return records
 
-                try:
-                    conn_dtls.decode(data)
-                except WrongProtocolVersion:
-                    # Send alert to stop communication
-                    record_alert = Alert()
-                    record_alert.level = "fatal"
-                    record_alert.description = "protocol_version"
-                    conn.send_list(conn_dtls.encode(record_alert))
-                    conn.close()
-                    return detected_elliptic_curves
+            if not conn_dtls.is_empty():
+                record = conn_dtls.pop_record()
+                self.parse_dtls_server_records_hooks.call(record)
+                records.append(record)
+                if isinstance(record, DTLSv10Handshake):
+                    if isinstance(record.payload, DTLSv10HelloVerifyRequest):
+                        verify_request = record.payload
+                        break
+                elif isinstance(record, Alert):
+                    if record.level == 2:
+                        conn.close()
+                        return records
 
-                while not conn_dtls.is_empty():
-                    record = conn_dtls.pop_record()
+        if verify_request is None:
+            return records
 
-                    if isinstance(record, DTLSv10Handshake):
-                        if isinstance(record.payload, ServerKeyExchange):
-                            server_key_exchange = record.payload
+        record_handshake.payload.cookie = verify_request.cookie
+        conn.send_list(conn_dtls.encode(record_handshake))
 
-                    elif isinstance(record, Alert):
-                        if record.level == 2:
-                            return detected_elliptic_curves
+        time_start = datetime.now()
+        run = True
+        while run:
+            tmp_time = datetime.now() - time_start
+            if tmp_time.total_seconds() > 5.0:
+                return records
 
-            record_alert = Alert()
-            record_alert.level = 1
-            record_alert.description = 0
-            conn.send_list(conn_dtls.encode(record_alert))
-            conn.close()
-            if server_key_exchange is None:
-                break
+            try:
+                data = conn.recv(4096)
+            except ConnectionError:
+                return records
+            except socket.timeout:
+                conn.close()
+                return records
 
-            # try to extract the ec id
-            tmp_ec_id = None
-            if isinstance(server_key_exchange.payload, ServerKeyExchangeECDSA):
-                tmp_params = server_key_exchange.payload.params
-                if isinstance(tmp_params, ServerECDHParamsField):
-                    if isinstance(tmp_params.curve_params, ECParametersNamedCurveField):
-                        tmp_ec_id = tmp_params.curve_params.namedcurve
+            try:
+                conn_dtls.decode(data)
+            except WrongProtocolVersion:
+                # Send alert and close socket
+                record_alert = Alert()
+                record_alert.level = "fatal"
+                record_alert.description = "protocol_version"
+                conn.send_list(conn_dtls.encode(record_alert))
+                conn.close()
+                return None
 
-            if tmp_ec_id is None:
-                return detected_elliptic_curves
+            while not conn_dtls.is_empty():
+                record = conn_dtls.pop_record()
+                self.parse_dtls_server_records_hooks.call(record)
+                records.append(record)
 
-            # stop if we get an unexpected ec id
-            if tmp_ec_id not in elliptic_curves:
-                return detected_elliptic_curves
-            detected_elliptic_curves.append(tmp_ec_id)
-            elliptic_curves.remove(tmp_ec_id)
+                if isinstance(record, Alert):
+                    if record.level == 2:
+                        return records
 
-            count += 1
-            if limit is not False and limit <= count:
-                break
+                if stop_condition(record, records):
+                    run = False
 
-        return detected_elliptic_curves
+        record_alert = Alert()
+        record_alert.level = 1
+        record_alert.description = 0
+        conn.send_list(conn_dtls.encode(record_alert))
+        conn.close()
+        return records
 
-    def _scan_elliptic_curves_tls(self, protocol_version, cipher_suites, elliptic_curves, limit=False):
-        """
-        Scan for supported elliptic curves
+    def connect_tls(self, protocol_version, stop_condition=None):
+        def _default_stop_condition(record, records):
+            return isinstance(record, Handshake) and \
+                isinstance(record.payload, ServerHelloDone)
 
-        :param protocol_version:
-        :param cipher_suites: List of cipher suites.
-        :param elliptic_curves: List of elliptic curves
-        :param limit:
-        :return: List of supported elliptic curve IDs
-        """
-        # Get IDs of allowed cipher suites
-        tmp = []
-        for cipher_suite in cipher_suites:
-            tmp.append(cipher_suite.id)
-        cipher_suites = tmp
+        if stop_condition is None:
+            stop_condition = _default_stop_condition
 
-        tmp = []
-        for elliptic_curve in elliptic_curves:
-            tmp.append(elliptic_curve.id)
-        elliptic_curves = tmp
+        conn = self._scanner.handler.connect()
+        conn.settimeout(2.0)
 
-        detected_elliptic_curves = []
-        count = 0
+        conn_tls = SSLv30Connection(
+            protocol_version=protocol_version
+        )
 
-        while True:
-            conn = self._scanner.handler.connect()
-            conn.settimeout(2.0)
+        record_handshake = self.build_tls_client_hello(
+            protocol_version
+        )
 
-            conn_tls = SSLv30Connection(
-                protocol_version=protocol_version
-            )
+        conn.send_list(conn_tls.encode(record_handshake))
 
-            record_handshake = self._build_tls_base_client_hello(
-                protocol_version,
-                cipher_suites,
-                elliptic_curves=elliptic_curves
-            )
+        time_start = datetime.now()
 
-            conn.send_list(conn_tls.encode(record_handshake))
+        records = []
+        run = True
+        while run:
+            tmp_time = datetime.now() - time_start
+            if tmp_time.total_seconds() > 5.0:
+                return records
 
-            time_start = datetime.now()
-            server_key_exchange = None
+            try:
+                data = conn.recv(4096)
+            except ConnectionError:
+                return records
+            except socket.timeout:
+                conn.close()
+                return records
 
-            while server_key_exchange is None:
-                tmp_time = datetime.now() - time_start
-                if tmp_time.total_seconds() > 5.0:
-                    return detected_elliptic_curves
+            try:
+                conn_tls.decode(data)
+            except WrongProtocolVersion:
+                # Send alert and close socket
+                record_alert = Alert()
+                record_alert.level = "fatal"
+                record_alert.description = "protocol_version"
+                conn.send_list(conn_tls.encode(record_alert))
+                conn.close()
+                return None
 
-                try:
-                    data = conn.recv(4096)
-                except ConnectionError:
-                    return detected_elliptic_curves
-                except socket.timeout:
-                    conn.close()
-                    return detected_elliptic_curves
+            while not conn_tls.is_empty():
+                record = conn_tls.pop_record()
+                self.parse_tls_server_records_hooks.call(record)
 
-                try:
-                    conn_tls.decode(data)
-                except WrongProtocolVersion:
-                    # Send alert and close socket
-                    record_alert = Alert()
-                    record_alert.level = "fatal"
-                    record_alert.description = "protocol_version"
-                    conn.send_list(conn_tls.encode(record_alert))
-                    conn.close()
-                    return detected_elliptic_curves
+                if isinstance(record, Alert):
+                    if record.level == 2:
+                        return records
 
-                while not conn_tls.is_empty():
-                    record = conn_tls.pop_record()
-                    if isinstance(record, Handshake):
-                        if isinstance(record.payload, ServerKeyExchange):
-                            server_key_exchange = record.payload
-                    elif isinstance(record, Alert):
-                        if record.level == 2:
-                            return detected_elliptic_curves
+                records.append(record)
+                if stop_condition(record, records):
+                    run = False
 
-            conn.close()
-            # stop if no ServerKeyExchange was sent
-            if server_key_exchange is None:
-                break
-
-            # try to extract the ec id
-            tmp_ec_id = None
-            if isinstance(server_key_exchange.payload, ServerKeyExchangeECDSA):
-                tmp_params = server_key_exchange.payload.params
-                if isinstance(tmp_params, ServerECDHParamsField):
-                    if isinstance(tmp_params.curve_params, ECParametersNamedCurveField):
-                        tmp_ec_id = tmp_params.curve_params.namedcurve
-
-            if tmp_ec_id is None:
-                return detected_elliptic_curves
-
-            # stop if we get an unexpected ec id
-            if tmp_ec_id not in elliptic_curves:
-                return detected_elliptic_curves
-            detected_elliptic_curves.append(tmp_ec_id)
-            elliptic_curves.remove(tmp_ec_id)
-
-            count += 1
-            if limit is not False and limit <= count:
-                break
-
-        return detected_elliptic_curves
+        conn.close()
+        return records
 
 
 class BaseInfoScan(BaseScan):
