@@ -29,12 +29,9 @@ class VulnerabilityHeartbleed(BaseScan):
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
 
-    def _send_heartbeat(self, protocol_version, cipher_suites):
+    def _send_heartbeat(self, protocol_version):
 
-        record_tls = self._build_tls_base_client_hello(
-            protocol_version,
-            cipher_suites
-        )
+        record_tls = self.build_tls_client_hello(protocol_version)
 
         ext_hb = HeartbeatExtension()
         ext_hb.mode = 1
@@ -146,7 +143,7 @@ class VulnerabilityHeartbleed(BaseScan):
         for protocol_version in self._scanner.get_enabled_versions():
             if protocol_version != flextls.registry.version.SSLv2:
                 cipher_suites = flextls.registry.tls.cipher_suites.get_ids()
-                result_heartbeat = self._send_heartbeat(protocol_version, cipher_suites)
+                result_heartbeat = self._send_heartbeat(protocol_version)
                 if result_heartbeat is not None:
                     break
 

@@ -1,19 +1,20 @@
 openssl_enabled = False
 try:
     from OpenSSL import crypto
+
     openssl_enabled = True
 except:
     pass
 
-
 import flextls
+from flextls.protocol.handshake import Handshake, ServerCertificate, DTLSv10Handshake
 
 from sslscan import modules
 from sslscan.exception import Timeout
 from sslscan.module.scan import BaseScan
 
 
-class ServerCertificate(BaseScan):
+class ScanServerCertificate(BaseScan):
     """
     Extract certificate information.
     """
@@ -23,34 +24,39 @@ class ServerCertificate(BaseScan):
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
 
+    def _scan_certificate(self):
+        def stop_condition(record, records):
+            return isinstance(record, (Handshake, DTLSv10Handshake)) and \
+                isinstance(record.payload, ServerCertificate)
+
+        kb = self._scanner.get_knowledge_base()
+        for protocol_version in self._scanner.get_enabled_versions():
+            if protocol_version == flextls.registry.version.SSLv2:
+                continue
+
+            self.connect(
+                protocol_version,
+                stop_condition=stop_condition
+            )
+
+            raw_certs = kb.get("server.certificate.raw")
+            if raw_certs is not None:
+                return raw_certs
+
     def run(self):
         kb = self._scanner.get_knowledge_base()
-
         raw_certs = kb.get("server.certificate.raw")
         if raw_certs is None:
-            for protocol_version in self._scanner.get_enabled_versions():
-                if protocol_version == flextls.registry.version.SSLv2:
-                    continue
-                else:
-                    cipher_suites = flextls.registry.tls.cipher_suites[:]
-                    try:
-                        self._scan_cipher_suites(
-                            protocol_version,
-                            cipher_suites,
-                            limit=1
-                        )
-                    except Timeout:
-                        continue
-
-                raw_certs = kb.get("server.certificate.raw")
-                if raw_certs is not None:
-                    break
+            raw_certs = self._scan_certificate()
 
         if type(raw_certs) != list:
             return
 
-        cert_chain = []
+        cert_chain = kb.get("server.certificate_chain")
+        if cert_chain is not None:
+            return
 
+        cert_chain = []
         for raw_cert in raw_certs:
             try:
                 cert = crypto.load_certificate(
@@ -67,4 +73,4 @@ class ServerCertificate(BaseScan):
 
 
 if openssl_enabled is True:
-    modules.register(ServerCertificate)
+    modules.register(ScanServerCertificate)
