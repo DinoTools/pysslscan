@@ -71,6 +71,20 @@ At the time of writing pySSLScan requires the development version of the cryptog
 
     $ pip install sslscan
 
+Install Terminal(Stable, since 0.6):
+
+Install pySSLScan and all dependencies to optimize terminal usage.
+
+.. code-block:: console
+
+    $ pip install 'sslscan[terminal]'
+
+Install Terminal(Development):
+
+.. code-block:: console
+
+    $ pip install -e '.[terminal]'
+
 
 Usage
 -----
