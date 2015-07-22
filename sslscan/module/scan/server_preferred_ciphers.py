@@ -40,9 +40,15 @@ class ServerPreferredCiphers(ServerCiphers):
                     )
                     continue
 
-                cipher_suites.reverse()
+                # Check ciphers from first test in reverse order to identify
+                # preference
+                reversed_ciphers = []
+                for cipher_id in reversed(tmp1):
+                    reversed_ciphers.append(
+                        flextls.registry.tls.cipher_suites.get(cipher_id))
                 try:
-                    tmp2 = self._scan_cipher_suites(protocol_version, cipher_suites, limit=1)
+                    tmp2 = self._scan_cipher_suites(protocol_version,
+                                                    reversed_ciphers, limit=1)
                 except Timeout:
                     continue
 
