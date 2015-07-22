@@ -46,6 +46,17 @@ class ServerPreferredCiphers(ServerCiphers):
                 except Timeout:
                     continue
 
+                if len(tmp2) == 0:
+                    kb.append(
+                        "server.preferred_ciphers",
+                        CipherResult(
+                            protocol_version=protocol_version,
+                            cipher_suite=None,
+                            status=0,
+                        )
+                    )
+                    continue
+
                 if tmp1[0] == tmp2[0]:
                     cipher_suite = flextls.registry.tls.cipher_suites.get(
                         tmp1[0]
