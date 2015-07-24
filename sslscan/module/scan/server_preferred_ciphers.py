@@ -14,9 +14,6 @@ class ServerPreferredCiphers(ServerCiphers):
 
     name = "server.preferred_ciphers"
 
-    def __init__(self, **kwargs):
-        BaseScan.__init__(self, **kwargs)
-
     def _add_cipher_to_kb(self, protocol_version, cipher_suite, status):
         kb = self._scanner.get_knowledge_base()
         kb.append(
