@@ -353,6 +353,22 @@ class Terminal(BaseReport):
                 )
             print("")
 
+    def _print_server_next_protocol_negotiation(self, kb):
+        protocols = kb.get("server.extension.next_protocol_negotiation")
+        if protocols is None:
+            return
+
+        print("Next Protocol Negotiation:")
+        if protocols is False:
+            print("Not supported")
+        else:
+            for protocol in protocols:
+                print(
+                    "  {0}".format(
+                        protocol.name
+                    )
+                )
+
     def _print_server_preferred_ciphers(self, kb):
         ciphers = kb.get("server.preferred_ciphers")
         if ciphers is None:
@@ -495,6 +511,7 @@ class Terminal(BaseReport):
         self._print_server_elliptic_curves(kb)
 
         self._print_server_alpn(kb)
+        self._print_server_next_protocol_negotiation(kb)
 
         self._print_custom(kb, "server.custom")
         self._print_custom(kb, "vulnerability.custom")
