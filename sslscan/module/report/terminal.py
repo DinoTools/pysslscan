@@ -302,6 +302,22 @@ class Terminal(BaseReport):
         )
         print("")
 
+    def _print_server_alpn(self, kb):
+        protocols = kb.get("server.extension.alpn")
+        if protocols is None:
+            return
+
+        print("Application Layer Protocol Negotiation:")
+        if protocols is False:
+            print("Not supported")
+        else:
+            for protocol in protocols:
+                print(
+                    "  {0}".format(
+                        protocol.name
+                    )
+                )
+
     def _print_server_elliptic_curves(self, kb):
         curves = kb.get("server.ec.named_curves")
         if curves is not None:
@@ -337,6 +353,22 @@ class Terminal(BaseReport):
                 )
             print("")
 
+    def _print_server_next_protocol_negotiation(self, kb):
+        protocols = kb.get("server.extension.next_protocol_negotiation")
+        if protocols is None:
+            return
+
+        print("Next Protocol Negotiation:")
+        if protocols is False:
+            print("Not supported")
+        else:
+            for protocol in protocols:
+                print(
+                    "  {0}".format(
+                        protocol.name
+                    )
+                )
+
     def _print_server_preferred_ciphers(self, kb):
         ciphers = kb.get("server.preferred_ciphers")
         if ciphers is None:
@@ -345,7 +377,7 @@ class Terminal(BaseReport):
         print("Preferred Server Cipher(s):")
         for cipher in ciphers:
             rating_version = self._rating.rate('cipher.protocol_version', cipher.protocol_version, cipher)
-            if cipher.cipher_suite == None:
+            if cipher.cipher_suite is None:
                 print(
                     "  {1}{0:7}{2} Protocol version not supported".format(
                         cipher.protocol_version_name,
@@ -355,7 +387,7 @@ class Terminal(BaseReport):
                 )
                 continue
 
-            if cipher.cipher_suite == False:
+            if cipher.cipher_suite is False:
                 print(
                     "  {1}{0:7}{2} No preferred cipher suite".format(
                         cipher.protocol_version_name,
@@ -477,6 +509,9 @@ class Terminal(BaseReport):
         self._print_host_renegotiation(kb)
 
         self._print_server_elliptic_curves(kb)
+
+        self._print_server_alpn(kb)
+        self._print_server_next_protocol_negotiation(kb)
 
         self._print_custom(kb, "server.custom")
         self._print_custom(kb, "vulnerability.custom")
