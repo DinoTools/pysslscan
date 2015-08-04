@@ -38,6 +38,9 @@ setup(
         "flextls >= 0.4dev1",
         "six >= 1.4.1"
     ],
+    extras_require={
+        "terminal": ["colorama >= 0.2.4"]
+    },
     packages=find_packages(exclude=["*.tests", "*.tests.*"]),
     include_package_data=True,
     package_data={
