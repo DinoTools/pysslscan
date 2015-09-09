@@ -279,6 +279,8 @@ class ModuleManager(object):
                 continue
             if module.name == name:
                 return module
+            if module.alias and name in module.alias:
+                return module
 
         return None
 

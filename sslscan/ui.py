@@ -48,6 +48,12 @@ def print_module_info(args):
     print("="*len(heading))
     print("")
 
+    if module.alias and len(module.alias) > 0:
+        print("Alias:")
+        for alias in module.alias:
+            print("* {}".format(alias))
+        print("")
+
     text = module.__doc__
     if text is None:
         text = ""

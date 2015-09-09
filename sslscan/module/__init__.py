@@ -8,6 +8,7 @@ class BaseModule(object):
     It provides the basic functionality.
     """
 
+    alias = None
     config_options = []
 
     def __init__(self, scanner=None, config=None):
