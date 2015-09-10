@@ -11,6 +11,7 @@ class ProtocolHTTP(BaseInfoScan):
     """
 
     name = "protocol.http"
+    alias = ("http",)
 
     def run(self):
         if self._scanner.handler.name != "http":

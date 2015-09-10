@@ -25,6 +25,7 @@ class VulnerabilityHeartbleed(BaseScan):
     """
 
     name = "vuln.heartbleed"
+    alias = ("heartbleed",)
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)

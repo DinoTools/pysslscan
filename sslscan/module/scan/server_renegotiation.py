@@ -23,6 +23,7 @@ class ServerRenegotiation(BaseScan):
     """
 
     name = "server.renegotiation"
+    alias = ("renegotiation",)
     status = STATUS_OK if openssl_enabled else STATUS_ERROR
     status_messages = ["OpenSSL is {}".format("available" if openssl_enabled else "missing")] + version_info
 

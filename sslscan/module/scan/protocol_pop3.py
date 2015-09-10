@@ -11,6 +11,7 @@ class ProtocolPOP3(BaseInfoScan):
     """
 
     name = "protocol.pop3"
+    alias = ("pop3",)
 
     def run(self):
         if self._scanner.handler.name != "pop3":

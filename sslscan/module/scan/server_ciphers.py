@@ -21,6 +21,7 @@ class ServerCiphers(BaseScan):
     """
 
     name = "server.ciphers"
+    alias = ("ciphers",)
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
