@@ -6,7 +6,7 @@ import textwrap
 
 from sslscan import __version__, modules, Scanner
 from sslscan.exception import ConfigOptionNotFound, ModuleNotFound, OptionValueError
-from sslscan.module import STATUS_OK, STATUS_WARNING, STATUS_ERROR
+from sslscan.module import STATUS_NAMES
 from sslscan.module.handler import BaseHandler
 from sslscan.module.report import BaseReport
 from sslscan.module.rating import BaseRating
@@ -56,15 +56,11 @@ def print_module_info(args):
             print("* {}".format(alias))
         print("")
 
-    status = "Unknown"
-    if module.status == STATUS_OK:
-        status = "Enabled"
-    elif module.status == STATUS_WARNING:
-        status = "Warning"
-    elif module.status == STATUS_ERROR:
-        status = "Error"
-
-    print("Status: {}".format(status))
+    print(
+        "Status: {}".format(
+            STATUS_NAMES.get(module.status, "Unknown")
+        )
+    )
     print("")
     if module.status_messages:
         for msg in module.status_messages:
