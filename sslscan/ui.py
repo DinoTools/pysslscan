@@ -51,6 +51,7 @@ def print_module_info(args):
 
     if module.alias and len(module.alias) > 0:
         print("Alias:")
+        print("")
         for alias in module.alias:
             print("* {}".format(alias))
         print("")
@@ -64,6 +65,7 @@ def print_module_info(args):
         status = "Error"
 
     print("Status: {}".format(status))
+    print("")
     if module.status_messages:
         for msg in module.status_messages:
             print("* {}".format(msg))
