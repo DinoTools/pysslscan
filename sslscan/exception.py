@@ -7,6 +7,20 @@ class ModuleNotFound(Exception):
         return "Module '{}' not found".format(self.name)
 
 
+class ModuleLoadStatus(Exception):
+    def __init__(self, name="", base_class=None, module=None):
+        self.name = name
+        self.base_class = base_class
+        self.module = module
+
+    def __str__(self):
+        status = "Unknown"
+        if self.module:
+            from sslscan.module import STATUS_NAMES
+            status = STATUS_NAMES.get(self.module.status, status)
+        return "Unable to load module '{}' with status '{}'".format(self.name, status)
+
+
 class BaseConfigError(Exception):
     pass
 

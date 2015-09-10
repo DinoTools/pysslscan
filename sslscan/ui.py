@@ -5,7 +5,7 @@ import textwrap
 
 
 from sslscan import __version__, modules, Scanner
-from sslscan.exception import ConfigOptionNotFound, ModuleNotFound, OptionValueError
+from sslscan.exception import ConfigOptionNotFound, ModuleLoadStatus, ModuleNotFound, OptionValueError
 from sslscan.module import STATUS_NAMES
 from sslscan.module.handler import BaseHandler
 from sslscan.module.report import BaseReport
@@ -219,6 +219,12 @@ def run_scan(args):
         except ModuleNotFound as e:
             logger.error("Scan module '%s' not found", e.name)
             return 1
+        except ModuleLoadStatus as e:
+            status_msg = "unknown"
+            if e.module:
+                status_msg = STATUS_NAMES.get(e.module.status, status_msg)
+            logger.error("Unable to load module '%s' with status '%s'", e.name, status_msg)
+            return 1
         except ConfigOptionNotFound as e:
             logger.error(
                 "Unrecognised command line option '%s' for scan module '%s'.",
@@ -241,6 +247,12 @@ def run_scan(args):
             scanner.append_load(name, options, base_class=BaseReport)
         except ModuleNotFound as e:
             logger.error("Report module '%s' not found", e.name)
+            return 1
+        except ModuleLoadStatus as e:
+            status_msg = "unknown"
+            if e.module:
+                status_msg = STATUS_NAMES.get(e.module.status, status_msg)
+            logger.error("Unable to load module '%s' with status '%s'", e.name, status_msg)
             return 1
         except OptionValueError as e:
             logger.error(

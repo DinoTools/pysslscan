@@ -14,8 +14,9 @@ from sslscan.__about__ import (
     __uri__, __version__
 )
 from sslscan.config import ScanConfig
-from sslscan.exception import ModuleNotFound
+from sslscan.exception import ModuleLoadStatus, ModuleNotFound
 from sslscan.kb import KnowledgeBase
+from sslscan.module import STATUS_OK
 from sslscan.module.handler import BaseHandler
 from sslscan.module.rating import BaseRating
 from sslscan.module.report import BaseReport
@@ -115,10 +116,12 @@ class Scanner(object):
         :param String name: Name of the module to load
         :param Mixed config: Config of the module
         :param class base_class: Module lookup filter
-        :return: False if module not found
         """
 
         module = self._module_manager.get(name, base_class=base_class)
+        if module.status != STATUS_OK:
+            raise ModuleLoadStatus(name, base_class=base_class, module=module)
+
         module = module(scanner=self)
         module.config.set_values(config)
         self.append(module)
