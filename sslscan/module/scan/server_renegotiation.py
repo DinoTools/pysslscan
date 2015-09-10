@@ -1,29 +1,20 @@
-import six
+from sslscan import modules
+from sslscan._helper.openssl import version_openssl, version_pyopenssl, convert_versions2methods
+from sslscan.module import STATUS_OK, STATUS_ERROR
+from sslscan.module.scan import BaseScan
 
 openssl_enabled = False
 version_info = []
 try:
-    import OpenSSL
     from OpenSSL import SSL, _util
-    from sslscan._helper.openssl import convert_versions2methods
+
     openssl_enabled = True
-    try:
-        version_info.append("pyOpenSSL version {}".format(OpenSSL.__version__))
-    except:
-        pass
-    try:
-        tmp_version = SSL.SSLeay_version(0)
-        if isinstance(tmp_version, six.binary_type):
-            tmp_version = tmp_version.decode('ascii')
-        version_info.append("OpenSSL version {}".format(tmp_version))
-    except:
-        pass
+    if version_pyopenssl:
+        version_info.append("pyOpenSSL version {}".format(version_pyopenssl))
+    if version_openssl:
+        version_info.append("OpenSSL version {}".format(version_openssl))
 except ImportError:
     pass
-
-from sslscan import modules
-from sslscan.module import STATUS_OK, STATUS_ERROR
-from sslscan.module.scan import BaseScan
 
 
 class ServerRenegotiation(BaseScan):
