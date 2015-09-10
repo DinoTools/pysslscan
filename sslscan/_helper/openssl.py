@@ -1,5 +1,20 @@
+import six
+
 import flextls
-from OpenSSL import SSL
+
+openssl_enabled = False
+version_pyopenssl = None
+version_openssl = None
+try:
+    import OpenSSL
+    from OpenSSL import SSL
+    version_pyopenssl = OpenSSL.__version__
+    version_openssl = SSL.SSLeay_version(0)
+    if isinstance(version_openssl, six.binary_type):
+        version_openssl = version_openssl.decode('ascii')
+except ImportError:
+    OpenSSL = None
+
 
 def convert_version2method(protocol_version):
     """
