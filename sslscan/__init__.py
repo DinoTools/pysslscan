@@ -119,9 +119,6 @@ class Scanner(object):
         """
 
         module = self._module_manager.get(name, base_class=base_class)
-        if module is None:
-            raise ModuleNotFound(name=name,base_class=base_class)
-
         module = module(scanner=self)
         module.config.set_values(config)
         self.append(module)
@@ -270,7 +267,7 @@ class ModuleManager(object):
 
         :param String name: Name of the module
         :param class base_class: The filter
-        :return: If module exists return it or if not return None
+        :return: If module exists return it
         :rtype: Mixed
         """
 
@@ -282,7 +279,7 @@ class ModuleManager(object):
             if module.alias and name in module.alias:
                 return module
 
-        return None
+        raise ModuleNotFound(name=name, base_class=base_class)
 
     def get_modules(self, base_class=None):
         """
