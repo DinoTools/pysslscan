@@ -136,6 +136,7 @@ def print_module_list(args):
 
     mod_mgr = scanner.get_module_manager()
     modules = mod_mgr.get_modules(base_class=args.base_class)
+    modules.sort(key=lambda m: m.name)
     for module in modules:
         name = module.name
         text = module.__doc__
