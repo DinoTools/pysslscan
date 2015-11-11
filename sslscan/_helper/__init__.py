@@ -6,6 +6,9 @@ try:
 except ImportError:
     colorama_init = None
 
+from sslscan.module import STATUS_ERROR, STATUS_OK, STATUS_WARNING
+
+
 def rating2color(color, level):
     # ToDo:
     if level == None:
@@ -34,6 +37,28 @@ class Console(object):
             return ""
         else:
             return sys.stdout.encoding.lower()
+
+    def map_module_status(self, status):
+        """
+        Map a module status to a color and an icon
+
+        :param Integer status: Module status code
+        :return: Status color and icon
+        :rtype: Tuple
+        """
+        color = ""
+        icon = ""
+        if status == STATUS_OK:
+            color = self.color.OK
+            icon = self.icon.OK
+        elif status == STATUS_WARNING:
+            color = self.color.WARNING
+            icon = self.icon.WARNING
+        elif status == STATUS_ERROR:
+            color = self.color.ERROR
+            icon = self.icon.ERROR
+
+        return color, icon
 
 
 class ConsoleIcons(object):
