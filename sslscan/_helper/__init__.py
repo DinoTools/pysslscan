@@ -1,3 +1,5 @@
+import sys
+
 try:
     from colorama import Fore
     from colorama import init as colorama_init
@@ -15,6 +17,65 @@ def rating2color(color, level):
     if level < 7:
         return color.DANGER
     return color.RESET
+
+
+class Console(object):
+    def __init__(self):
+        self.icon = ConsoleIcons(self)
+        self.color = ColorConsole()
+
+    @property
+    def is_terminal(self):
+        return sys.stdout.encoding is not None
+
+    @property
+    def encoding(self):
+        if sys.stdout.encoding is None:
+            return ""
+        else:
+            return sys.stdout.encoding.lower()
+
+
+class ConsoleIcons(object):
+    def __init__(self, console):
+        """
+
+        :param Console console:
+        """
+        self._console = console
+
+        self._mapped_characters = {
+            "default": {
+                "ERROR": "E",
+                "OK": "O",
+                "WARNING": "W"
+            },
+            "utf8": {
+                "ERROR": "\u2715",
+                "OK": "\u2713",
+                "WARNING": "\u26A0"
+            }
+        }
+
+    @property
+    def scheme(self):
+        # ToDo: get scheme from config
+        if self._console.is_terminal and self._console.encoding == "utf-8":
+            return "utf8"
+        return "default"
+
+    def __getattr__(self, name):
+        characters = self._mapped_characters.get(self.scheme)
+        if characters is None:
+            characters = self._mapped_characters["default"]
+
+        icon = characters.get(name)
+        if icon is None:
+            icon = self._mapped_characters["default"].get(name)
+        if icon is None:
+            raise KeyError("Icon not found")
+
+        return icon
 
 
 class ColorConsole(object):
