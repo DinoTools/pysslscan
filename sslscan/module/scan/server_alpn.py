@@ -14,6 +14,7 @@ class ServerApplicationLayerProtocolNegotiation(BaseScan):
     """
 
     name = "server.alpn"
+    alias = ("alpn",)
 
     def _scan_alpn_tls(self, protocol_version):
         def hook_alpn(record, protocols=None):

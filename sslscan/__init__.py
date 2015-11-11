@@ -14,8 +14,9 @@ from sslscan.__about__ import (
     __uri__, __version__
 )
 from sslscan.config import ScanConfig
-from sslscan.exception import ModuleNotFound
+from sslscan.exception import ModuleLoadStatus, ModuleNotFound
 from sslscan.kb import KnowledgeBase
+from sslscan.module import STATUS_OK
 from sslscan.module.handler import BaseHandler
 from sslscan.module.rating import BaseRating
 from sslscan.module.report import BaseReport
@@ -88,6 +89,7 @@ class Scanner(object):
             }
         )
     ]
+
     def __init__(self, module_manager=None):
         global modules
         self._module_manager = module_manager
@@ -115,12 +117,11 @@ class Scanner(object):
         :param String name: Name of the module to load
         :param Mixed config: Config of the module
         :param class base_class: Module lookup filter
-        :return: False if module not found
         """
 
         module = self._module_manager.get(name, base_class=base_class)
-        if module is None:
-            raise ModuleNotFound(name=name,base_class=base_class)
+        if module.status != STATUS_OK:
+            raise ModuleLoadStatus(name, base_class=base_class, module=module)
 
         module = module(scanner=self)
         module.config.set_values(config)
@@ -270,7 +271,7 @@ class ModuleManager(object):
 
         :param String name: Name of the module
         :param class base_class: The filter
-        :return: If module exists return it or if not return None
+        :return: If module exists return it
         :rtype: Mixed
         """
 
@@ -282,14 +283,14 @@ class ModuleManager(object):
             if module.alias and name in module.alias:
                 return module
 
-        return None
+        raise ModuleNotFound(name=name, base_class=base_class)
 
     def get_modules(self, base_class=None):
         """
         Return a list of available modules. Use the base_class as filter option
 
         :param class base_class: The filter
-        :rtype: List
+        :rtype: BaseScan[]
         """
 
         result = []

@@ -5,7 +5,9 @@ import textwrap
 
 
 from sslscan import __version__, modules, Scanner
-from sslscan.exception import ConfigOptionNotFound, ModuleNotFound, OptionValueError
+from sslscan.exception import ConfigOptionNotFound, ModuleLoadStatus, ModuleNotFound, OptionValueError
+from sslscan import _helper
+from sslscan.module import STATUS_NAMES
 from sslscan.module.handler import BaseHandler
 from sslscan.module.report import BaseReport
 from sslscan.module.rating import BaseRating
@@ -13,6 +15,7 @@ from sslscan.module.scan import BaseScan
 
 
 logger = logging.getLogger(__name__)
+console = _helper.Console()
 
 
 def load_modules():
@@ -50,9 +53,21 @@ def print_module_info(args):
 
     if module.alias and len(module.alias) > 0:
         print("Alias:")
+        print("")
         for alias in module.alias:
             print("* {}".format(alias))
         print("")
+
+    print(
+        "Status: {}".format(
+            STATUS_NAMES.get(module.status, "Unknown")
+        )
+    )
+    print("")
+    if module.status_messages:
+        for msg in module.status_messages:
+            print("* {}".format(msg))
+    print("")
 
     text = module.__doc__
     if text is None:
@@ -123,6 +138,7 @@ def print_module_list(args):
 
     mod_mgr = scanner.get_module_manager()
     modules = mod_mgr.get_modules(base_class=args.base_class)
+    modules.sort(key=lambda m: m.name)
     for module in modules:
         name = module.name
         text = module.__doc__
@@ -141,7 +157,16 @@ def print_module_list(args):
             text = text[0]
 
         text = textwrap.dedent(text)
-        print("{0} - {1}".format(name, text))
+        (status_color, status_icon) = console.map_module_status(module.status)
+        print(
+            "{0}({3}{2}{4}) - {1}".format(
+                name,
+                text,
+                status_icon,
+                status_color,
+                console.color.RESET
+            )
+        )
 
     return 0
 
@@ -206,6 +231,12 @@ def run_scan(args):
         except ModuleNotFound as e:
             logger.error("Scan module '%s' not found", e.name)
             return 1
+        except ModuleLoadStatus as e:
+            status_msg = "unknown"
+            if e.module:
+                status_msg = STATUS_NAMES.get(e.module.status, status_msg)
+            logger.error("Unable to load module '%s' with status '%s'", e.name, status_msg)
+            return 1
         except ConfigOptionNotFound as e:
             logger.error(
                 "Unrecognised command line option '%s' for scan module '%s'.",
@@ -228,6 +259,12 @@ def run_scan(args):
             scanner.append_load(name, options, base_class=BaseReport)
         except ModuleNotFound as e:
             logger.error("Report module '%s' not found", e.name)
+            return 1
+        except ModuleLoadStatus as e:
+            status_msg = "unknown"
+            if e.module:
+                status_msg = STATUS_NAMES.get(e.module.status, status_msg)
+            logger.error("Unable to load module '%s' with status '%s'", e.name, status_msg)
             return 1
         except OptionValueError as e:
             logger.error(

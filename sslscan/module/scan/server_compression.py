@@ -12,6 +12,7 @@ class ServerCompression(BaseScan):
     """
 
     name = "server.compression"
+    alias = ("compression",)
 
     def run(self):
         def stop_condition(record, records):

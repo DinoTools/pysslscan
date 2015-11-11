@@ -11,6 +11,7 @@ class ProtocolSMTP(BaseInfoScan):
     """
 
     name = "protocol.smtp"
+    alias = ("smtp",)
 
     def run(self):
         if self._scanner.handler.name != "smtp":

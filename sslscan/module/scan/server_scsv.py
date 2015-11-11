@@ -22,6 +22,7 @@ class ServerSCSV(BaseScan):
     """
 
     name = "server.scsv"
+    alias = ("scsv",)
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)

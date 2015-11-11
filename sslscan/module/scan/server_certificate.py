@@ -1,17 +1,23 @@
-openssl_enabled = False
-try:
-    from OpenSSL import crypto
-
-    openssl_enabled = True
-except:
-    pass
-
 import flextls
 from flextls.protocol.handshake import Handshake, ServerCertificate, DTLSv10Handshake
 
 from sslscan import modules
-from sslscan.exception import Timeout
+from sslscan._helper.openssl import version_openssl, version_pyopenssl
+from sslscan.module import STATUS_OK, STATUS_ERROR
 from sslscan.module.scan import BaseScan
+
+openssl_enabled = False
+version_info = []
+try:
+    from OpenSSL import crypto
+
+    openssl_enabled = True
+    if version_pyopenssl:
+        version_info.append("pyOpenSSL version {}".format(version_pyopenssl))
+    if version_openssl:
+        version_info.append("OpenSSL version {}".format(version_openssl))
+except ImportError:
+    pass
 
 
 class ScanServerCertificate(BaseScan):
@@ -20,6 +26,9 @@ class ScanServerCertificate(BaseScan):
     """
 
     name = "server.certificate"
+    alias = ("certificate",)
+    status = STATUS_OK if openssl_enabled else STATUS_ERROR
+    status_messages = ["OpenSSL is {}".format("available" if openssl_enabled else "missing")] + version_info
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
@@ -72,5 +81,4 @@ class ScanServerCertificate(BaseScan):
         kb.set("server.certificate_chain", cert_chain)
 
 
-if openssl_enabled is True:
-    modules.register(ScanServerCertificate)
+modules.register(ScanServerCertificate)

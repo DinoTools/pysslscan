@@ -11,6 +11,7 @@ class ProtocolIMAP(BaseInfoScan):
     """
 
     name = "protocol.imap"
+    alias = ("imap",)
 
     def run(self):
         if self._scanner.handler.name != "imap":

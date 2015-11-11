@@ -13,6 +13,7 @@ class ServerPreferredCiphers(ServerCiphers):
     """
 
     name = "server.preferred_ciphers"
+    alias = ("preferred_ciphers",)
 
     def _add_cipher_to_kb(self, protocol_version, cipher_suite, status):
         kb = self._scanner.get_knowledge_base()

@@ -15,6 +15,7 @@ class ServerEllipticCurves(BaseScan):
     """
 
     name = "server.elliptic_curves"
+    alias = ("elliptic_curves",)
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)

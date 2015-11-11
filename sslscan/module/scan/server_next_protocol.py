@@ -14,6 +14,7 @@ class ServerNextProtocolNegotiation(BaseScan):
     """
 
     name = "server.next_protocol"
+    alias = ("next_protocol",)
 
     def _scan_next_protocol_tls(self, protocol_version):
         def hook_next_protocol(record):

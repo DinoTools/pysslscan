@@ -1,5 +1,14 @@
 from sslscan.config import ModuleConfig
 
+STATUS_OK = 1
+STATUS_WARNING = 2
+STATUS_ERROR = 3
+STATUS_NAMES = {
+    1: "OK",
+    2: "Warning",
+    3: "Error"
+}
+
 
 class BaseModule(object):
     """
@@ -9,6 +18,8 @@ class BaseModule(object):
     """
 
     alias = None
+    status = STATUS_OK
+    status_messages = None
     config_options = []
 
     def __init__(self, scanner=None, config=None):

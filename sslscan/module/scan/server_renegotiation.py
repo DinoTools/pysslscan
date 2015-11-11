@@ -1,13 +1,20 @@
+from sslscan import modules
+from sslscan._helper.openssl import version_openssl, version_pyopenssl, convert_versions2methods
+from sslscan.module import STATUS_OK, STATUS_ERROR
+from sslscan.module.scan import BaseScan
+
 openssl_enabled = False
+version_info = []
 try:
     from OpenSSL import SSL, _util
-    from sslscan._helper.openssl import convert_versions2methods
-    openssl_enabled = True
-except:
-    pass
 
-from sslscan import modules
-from sslscan.module.scan import BaseScan
+    openssl_enabled = True
+    if version_pyopenssl:
+        version_info.append("pyOpenSSL version {}".format(version_pyopenssl))
+    if version_openssl:
+        version_info.append("OpenSSL version {}".format(version_openssl))
+except ImportError:
+    pass
 
 
 class ServerRenegotiation(BaseScan):
@@ -16,6 +23,9 @@ class ServerRenegotiation(BaseScan):
     """
 
     name = "server.renegotiation"
+    alias = ("renegotiation",)
+    status = STATUS_OK if openssl_enabled else STATUS_ERROR
+    status_messages = ["OpenSSL is {}".format("available" if openssl_enabled else "missing")] + version_info
 
     def __init__(self, **kwargs):
         BaseScan.__init__(self, **kwargs)
@@ -66,5 +76,4 @@ class ServerRenegotiation(BaseScan):
             conn_ssl.close()
 
 
-if openssl_enabled is True:
-    modules.register(ServerRenegotiation)
+modules.register(ServerRenegotiation)
