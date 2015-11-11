@@ -89,6 +89,7 @@ class Scanner(object):
             }
         )
     ]
+
     def __init__(self, module_manager=None):
         global modules
         self._module_manager = module_manager
@@ -289,7 +290,7 @@ class ModuleManager(object):
         Return a list of available modules. Use the base_class as filter option
 
         :param class base_class: The filter
-        :rtype: List
+        :rtype: BaseScan[]
         """
 
         result = []
