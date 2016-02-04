@@ -94,7 +94,6 @@ class ServerEllipticCurves(BaseScan):
             tmp_ec_id = None
             if isinstance(server_key_exchange.payload, ServerKeyExchangeECDSA):
                 tmp_params = server_key_exchange.payload.params
-                print(tmp_params)
                 if isinstance(tmp_params, ServerECDHParamsField):
                     if isinstance(tmp_params.curve_params, ECParametersNamedCurveField):
                         tmp_ec_id = tmp_params.curve_params.namedcurve
