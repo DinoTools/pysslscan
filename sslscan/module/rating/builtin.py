@@ -58,7 +58,7 @@ class BuiltIn_0_5(BaseRating):
             RatingRule(
                 "server.certificate.x509.not_after",
                 rules=[
-                    lambda v, i, kb: 6 if v < datetime.now() else None
+                    lambda v, i, kb: 6 if v < datetime.utcnow() else None
                 ],
             )
         )
@@ -67,7 +67,7 @@ class BuiltIn_0_5(BaseRating):
             RatingRule(
                 "server.certificate.x509.not_before",
                 rules=[
-                    lambda v, i, kb: 6 if v > datetime.now() else None
+                    lambda v, i, kb: 6 if v > datetime.utcnow() else None
                 ],
             )
         )
