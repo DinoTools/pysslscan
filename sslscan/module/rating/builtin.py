@@ -50,6 +50,7 @@ class BuiltIn_0_5(BaseRating):
                 rules=[
                     lambda v, i, kb: 6 if v.startswith("md2") else None,
                     lambda v, i, kb: 6 if v.startswith("md5") else None,
+                    lambda v, i, kb: 3 if v.startswith("sha1") else None,
                 ]
             )
         )
